@@ -128,8 +128,10 @@ export async function run(options: RunOptions, templateName?: string) {
       }
       try {
         const content_json = JSON.parse(content);
+        let counter = 1
         for (const message of content_json.commitMessages) {
-          console.log(message);
+          console.log(counter+ ". "+message);
+          counter += 1;
         }
       }
       catch (error) {
@@ -156,8 +158,10 @@ export async function run(options: RunOptions, templateName?: string) {
     const response = await session.sendMessage(rendered_template);
     try {
       const content_json = JSON.parse(response.response.text());
+      let counter = 1;
       for (const message of content_json.commitMessages) {
-        console.log(message);
+        console.log(counter+ ". "+message);
+        counter += 1;
       }
     } catch (error) {
       console.error("Error parsing JSON response:", error);
