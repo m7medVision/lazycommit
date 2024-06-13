@@ -29,5 +29,11 @@ Please suggest 10 commit messages, given the following diff:
 
 Keep in mind you will suggest 10 commit messages. Only 1 will be used. It's better to push yourself (esp to synthesize to a higher level) and maybe wrong about some of the 10 commits because only one needs to be good. I'm looking for your best commit, not the best average commit. It's better to cover more scenarios than include a lot of overlap.
 
-Write your 10 commit messages below, in the format \`1. <message>\`, \`2. <message>\`, etc.:
+Write your 10 commit messages below, in the format json list format below:
+{
+  commitMessages: [
+    "message",
+    "message"
+  ]
+}
 `;

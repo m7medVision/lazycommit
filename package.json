@@ -1,5 +1,5 @@
 {
-  "name": "@chhoumann/bunnai",
+  "name": "@m7medvision/lazycommit",
   "description": "let ai write commit messages for you",
   "version": "1.3.9",
   "author": "Christian Bager Bach Houmann <christian@bagerbach.com>",
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/chhoumann/bunnai"
+    "url": "https://github.com/m7medvision/lazycommit"
   },
   "main": "dist/index.js",
   "devDependencies": {
@@ -39,6 +39,7 @@
   "dependencies": {
     "@clack/core": "^0.3.3",
     "@clack/prompts": "^0.7.0",
+    "@google/generative-ai": "^0.12.0",
     "cleye": "^1.3.2",
     "openai": "^4.26.0",
     "simple-git": "^3.23.0"
