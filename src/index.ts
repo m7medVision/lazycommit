@@ -9,7 +9,7 @@ const config = command(
 	{
 		name: "config",
 		help: {
-			description: "Configure bunnai",
+			description: "Configure lazycommit",
 		},
 	},
 	(argv) => {
@@ -52,7 +52,7 @@ const config = command(
 
 export const CLI = cli(
 	{
-		name: "bunnai",
+		name: "lazycommit",
 		version,
 		commands: [config],
 		flags: {
@@ -68,14 +68,14 @@ export const CLI = cli(
 					promise,
 					"reason:",
 					reason,
-					"\nPlease report this! https://github.com/chhoumann/bunnai/issues",
+					"\nPlease report this! https://github.com/m7medvision/lazycommit/issues",
 				);
 				process.exit(1);
 			});
 
 			process.on("uncaughtException", (err) => {
 				console.error(
-					"Unhandled exception. Please report this! https://github.com/chhoumann/bunnai/issues",
+					"Unhandled exception. \nPlease report this! https://github.com/m7medvision/lazycommit/issues",
 					err,
 				);
 				process.exit(1);

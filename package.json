@@ -20,7 +20,7 @@
     "typescript": "^5.0.0"
   },
   "bin": {
-    "bunnai": "dist/index.js"
+    "lazycommit": "dist/index.js"
   },
   "bugs": "https://github.com/m7medvision/lazycommit/issues",
   "files": [

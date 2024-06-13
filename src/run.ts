@@ -121,7 +121,6 @@ export async function run(options: RunOptions, templateName?: string) {
         console.debug("Response received from OpenAI.");
         console.debug(JSON.stringify(response, null, 2));
       }
-
       const content = response.choices[0].message.content;
       if (!content) {
         console.error("Failed to generate commit message");

@@ -207,7 +207,7 @@ export async function showConfigUI() {
 
 				const newTemplatePath = path.join(
 					os.homedir(),
-					`.bunnai-template-${newTemplateName}`,
+					`.lazycommit-template-${newTemplateName}`,
 				);
 
 				await Bun.write(newTemplatePath, template);
