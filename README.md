@@ -47,7 +47,7 @@ customCommands:
 
 this allows you to edit the commit message in vim after you've selected it from the menu.
 
-abort comitting by deleting the commit message in vim.
+abort committing by deleting the commit message in vim.
 
 ```yaml
 customCommands:
