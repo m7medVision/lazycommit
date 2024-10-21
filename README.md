@@ -43,7 +43,7 @@ customCommands:
         labelFormat: "{{ .number }}: {{ .message | green }}"
 ```
 
-### with vim
+### with neovim
 
 this allows you to edit the commit message in vim after you've selected it from the menu.
 
@@ -53,7 +53,7 @@ abort committing by deleting the commit message in vim.
 customCommands:
   - key: "<c-a>" # ctrl + a
     description: "Pick AI commit"
-    command: 'echo "{{.Form.Msg}}" > .git/COMMIT_EDITMSG && vim .git/COMMIT_EDITMSG && [ -s .git/COMMIT_EDITMSG ] && git commit -F .git/COMMIT_EDITMSG || echo "Commit message is empty, commit aborted."'
+    command: 'echo "{{.Form.Msg}}" > .git/COMMIT_EDITMSG && nvim .git/COMMIT_EDITMSG && [ -s .git/COMMIT_EDITMSG ] && git commit -F .git/COMMIT_EDITMSG || echo "Commit message is empty, commit aborted."'
     context: "files"
     subprocess: true
     prompts:
