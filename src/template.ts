@@ -5,27 +5,44 @@ Please suggest 10 commit messages, given the following diff:
 {{diff}}
 \`\`\`
 
-**Criteria:**
+You have to user Semantic Commit Messages way of writing commit messages.
+Format: <type>(<scope>): <subject>
+- <type> is mandatory and specifies the type of commit.
+- <scope> is optional and specifies the place of the commit change.
+- <subject> is mandatory and contains succinct description of the change.
+- Any line of the commit message cannot be longer 100 characters!
+# Types
+- feat: A new feature
+- fix: A bug fix
+- docs: Documentation only changes
+- style: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
+- refactor: A code change that neither fixes a bug nor adds a feature
+- perf: A code change that improves performance
+- ci: Changes to our CI configuration files and scripts (example scopes: Travis, Circle, BrowserStack, SauceLabs)
+- test: Adding missing tests
+- chore: anything else
+# example
+- feat(ng-list): allow custom separator
+- fix(ng-list): handle empty arrays
+- docs(ng-list): update readme
+- style(ng-list): remove whitespace
+- refactor(ng-list): use helper function for filter
+- perf(ng-list): optimize filter
+- ci(ng-list): add Travis CI
+- test(ng-list): add missing tests
+- chore(ng-list): change linter to eslint
+# more example 
+also you can write commit like this 
+chore: add Oyster build script
+docs: explain hat wobble
+feat: add beta sequence
+fix: remove broken confirmation message
+refactor: share logic between 4d3d3d3 and flarhgunnstow
+style: convert tabs to spaces
+test: ensure Tayne retains clothing
 
-1. **Format:** Each commit message must follow the conventional commits format, which is \`<type>: <description>\`.
-2. **Relevance:** Avoid mentioning a module name unless it's directly relevant to the change.
-3. **Enumeration:** List the commit messages from 1 to 10.
-4. **Clarity and Conciseness:** Each message should clearly and concisely convey the change made.
-
-**Commit Message Examples:**
-
--   fix: add password regex pattern
--   feat: add new test cases
--   style: remove unused imports
--   refactor: extract common code to \`utils/wait.ts\`
-
-**Instructions:**
-
--   Take a moment to understand the changes made in the diff.
--   Think about the impact of these changes on the project (e.g., bug fixes, new features, performance improvements, code refactoring, documentation updates). It's critical to my career you abstract the changes to a higher level and not just describe the code changes.
--   Generate commit messages that accurately describe these changes, ensuring they are helpful to someone reading the project's history.
--   Remember, a well-crafted commit message can significantly aid in the maintenance and understanding of the project over time.
--   If multiple changes are present, make sure you capture them all in each commit message.
+# Notes
+you have to be creative and think about the best commit message that can describe the changes in the diff. like if you have a diff that changes the color of a button from red to blue, you can write a commit message like this: style(button): change button color from red to blue. Moreover, you have pick simple words easy to understand.  
 
 Keep in mind you will suggest 10 commit messages. Only 1 will be used. It's better to push yourself (esp to synthesize to a higher level) and maybe wrong about some of the 10 commits because only one needs to be good. I'm looking for your best commit, not the best average commit. It's better to cover more scenarios than include a lot of overlap.
 
