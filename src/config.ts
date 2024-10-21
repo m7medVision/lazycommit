@@ -62,14 +62,14 @@ function hasOwn<T extends object, K extends PropertyKey>(
 export const configPath = path.join(os.homedir(), ".lazycommit");
 
 export interface Config {
-  provider: "openai" | "google";
+	provider: "openai" | "google";
 	API_KEY: string;
 	model: string;
 	templates: Record<string, string>;
 }
 
 const DEFAULT_CONFIG: Config = {
-  provider: "openai",
+	provider: "openai",
 	API_KEY: "",
 	model: "gpt-4o",
 	templates: {
@@ -135,11 +135,11 @@ export async function showConfigUI() {
 		const choice = (await p.select({
 			message: "set config",
 			options: [
-        {
-          label: "Provider",
-          value: "provider",
-          hint: config.provider,
-        },
+				{
+					label: "Provider",
+					value: "provider",
+					hint: config.provider,
+				},
 				{
 					label: "API Key",
 					value: "API_KEY",
@@ -166,7 +166,7 @@ export async function showConfigUI() {
 		})) as keyof Config | "template" | "cancel" | symbol;
 
 		if (p.isCancel(choice)) {
-      process.exit(0);
+			process.exit(0);
 		}
 
 		if (choice === "API_KEY") {
@@ -227,29 +227,29 @@ export async function showConfigUI() {
 				await editFile(templatePath, () => {
 					console.log(`Prompt template '${templateChoice}' updated`);
 				});
-        process.exit(0);
+				process.exit(0);
 			}
 		} else if (choice === "provider") {
-      const provider = await p.select({
-        message: "Provider",
-        options: [
-          {
-            label: "OpenAI",
-            value: "openai",
-          },
-          {
-            label: "Google",
-            value: "google",
-          },
-        ],
-        initialValue: config.provider,
-      });
+			const provider = await p.select({
+				message: "Provider",
+				options: [
+					{
+						label: "OpenAI",
+						value: "openai",
+					},
+					{
+						label: "Google",
+						value: "google",
+					},
+				],
+				initialValue: config.provider,
+			});
 
-      await setConfigs([["provider", provider as string]]);
-    }
+			await setConfigs([["provider", provider as string]]);
+		}
 
 		if (p.isCancel(choice)) {
-      process.exit(0);
+			process.exit(0);
 		}
 
 		showConfigUI();
@@ -260,23 +260,23 @@ export async function showConfigUI() {
 }
 
 async function getModels() {
-  const config = await readConfigFile();
-  const provider = config.provider;
-  const apiKey = config.API_KEY;
-  if (!apiKey) {
-    throw new Error("API_KEY is not set");
-  }
-  if (provider === "openai") {
+	const config = await readConfigFile();
+	const provider = config.provider;
+	const apiKey = config.API_KEY;
+	if (!apiKey) {
+		throw new Error("API_KEY is not set");
+	}
+	if (provider === "openai") {
 
-    const oai = new OpenAI({
-      apiKey,
-    });
+		const oai = new OpenAI({
+			apiKey,
+		});
 
-    const models = await oai.models.list();
-    return models.data.map((model) => model.id);
-  } else if (provider === "google") {
-    return ["gemini-1.5-flash", "gemini-1.5-pro"];
-  } else {
-    throw new Error("Invalid provider");
-  }
+		const models = await oai.models.list();
+		return models.data.map((model) => model.id);
+	} else if (provider === "google") {
+		return ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.5-pro-002", "gemini-1.5-flash-8b", "gemini-1.5-flash-002"];
+	} else {
+		throw new Error("Invalid provider");
+	}
 }
