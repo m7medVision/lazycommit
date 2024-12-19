@@ -1,8 +1,8 @@
 import { $ } from "bun";
-import OpenAI from "openai";
+import { createOpenAI } from "@ai-sdk/openai";
+import { generateText } from "ai";
 import { readConfigFile } from "./config";
 import simpleGit from "simple-git";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
 interface RunOptions {
   verbose?: boolean;
@@ -12,11 +12,10 @@ async function getStagedDiff(target_dir: string) {
   try {
     const git = simpleGit(target_dir);
     const diff = await git.diff(["--cached"]);
-
     return diff;
   } catch (error) {
     console.error("Error getting git diff:", error);
-    throw error; // Re-throw the error after logging it
+    throw error;
   }
 }
 
@@ -30,7 +29,7 @@ export async function run(options: RunOptions, templateName?: string) {
   if (templateName) {
     if (!Object.prototype.hasOwnProperty.call(config.templates, templateName)) {
       console.error(
-        `Error: Template '${templateName}' does not exist in the configuration.`,
+        `Error: Template '${templateName}' does not exist in the configuration.`
       );
       process.exit(1);
     }
@@ -48,7 +47,7 @@ export async function run(options: RunOptions, templateName?: string) {
   const templateFile = Bun.file(templateFilePath);
   if (!(await templateFile.exists())) {
     console.error(
-      `Error: The template file '${templateFilePath}' does not exist.`,
+      `Error: The template file '${templateFilePath}' does not exist.`
     );
     process.exit(1);
   }
@@ -93,82 +92,35 @@ export async function run(options: RunOptions, templateName?: string) {
 
   const system_message =
     "You are a commit message generator. I will provide you with a git diff, and I would like you to generate an appropriate commit message using the conventional commit format. Do not write any explanations or other words, just reply with the commit message.";
-  if (config.provider === "openai") {
-    const oai = new OpenAI({
-      apiKey: config.API_KEY,
+
+  const aiProvider = createOpenAI({
+    compatibility: 'strict',
+    apiKey: config.API_KEY,
+  });
+
+  try {
+    if (options.verbose) {
+      console.debug("Sending request to OpenAI service...");
+    }
+
+    const { text } = await generateText({
+      model: aiProvider('gpt-4-turbo'),
+      prompt: `${system_message}\n${rendered_template}`,
     });
 
-    try {
-      if (options.verbose) {
-        console.debug("Sending request to OpenAI...");
-      }
-      const response = await oai.chat.completions.create({
-        messages: [
-          {
-            role: "system",
-            content: system_message,
-          },
-          {
-            role: "user",
-            content: rendered_template,
-          },
-        ],
-        model: config.model,
-        response_format: { type: "json_object" },
-      });
+    if (options.verbose) {
+      console.debug("Response received from OpenAI service.");
+      console.debug(text);
+    }
 
-      if (options.verbose) {
-        console.debug("Response received from OpenAI.");
-        console.debug(JSON.stringify(response, null, 2));
-      }
-      const content = response.choices[0].message.content;
-      if (!content) {
-        console.error("Failed to generate commit message");
-        process.exit(1);
-      }
-      try {
-        const content_json = JSON.parse(content);
-        let counter = 1
-        for (const message of content_json.commitMessages) {
-          console.log(counter+ ". "+message);
-          counter += 1;
-        }
-      }
-      catch (error) {
-        console.error("Error parsing JSON response:", error);
-        process.exit(1);
-      }
-      if (options.verbose) {
-        console.debug("Commit message generated and outputted.");
-      }
-    } catch (error) {
-      console.error(`Failed to fetch from openai: ${error}`);
-      process.exit(1);
+    console.log(text.trim());
+
+    if (options.verbose) {
+      console.debug("Commit message generated and outputted.");
     }
-  } else if (config.provider === "google") {
-    const genAI = new GoogleGenerativeAI(config.API_KEY);
-    const model = genAI.getGenerativeModel({
-      model: config.model,
-      systemInstruction: system_message,
-      generationConfig: { responseMimeType: "application/json" },
-    });
-    const session = model.startChat({
-      history: [],
-    });
-    const response = await session.sendMessage(rendered_template);
-    try {
-      const content_json = JSON.parse(response.response.text());
-      let counter = 1;
-      for (const message of content_json.commitMessages) {
-        console.log(counter+ ". "+message);
-        counter += 1;
-      }
-    } catch (error) {
-      console.error("Error parsing JSON response:", error);
-      process.exit(1);
-    }
-  } else {
-    console.error("Provider not supported");
+
+  } catch (error) {
+    console.error(`Failed to fetch from OpenAI service: ${error}`);
     process.exit(1);
   }
 }
