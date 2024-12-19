@@ -104,7 +104,7 @@ export async function run(options: RunOptions, templateName?: string) {
     }
 
     const { text } = await generateText({
-      model: aiProvider('gpt-4-turbo'),
+      model: aiProvider(config.model),
       prompt: `${system_message}\n${rendered_template}`,
     });
 
