@@ -158,15 +158,15 @@ export async function showConfigUI() {
 					hint: "edit the prompt template",
 				},
 				{
-					label: "Cancel",
-					value: "cancel",
+					label: "Done", // Changed from "Cancel" to "Done"
+					value: "done",
 					hint: "exit",
 				},
 			],
-		})) as keyof Config | "template" | "cancel" | symbol;
+		})) as keyof Config | "template" | "done" | symbol;
 
-		if (p.isCancel(choice)) {
-			process.exit(0);
+		if (p.isCancel(choice) || choice === "done") {
+			process.exit(0); // Ensure it exits when "Done" is selected
 		}
 
 		if (choice === "API_KEY") {
