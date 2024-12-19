@@ -2,7 +2,7 @@
   "name": "@m7medvision/lazycommit",
   "description": "let ai write commit messages for you",
   "version": "1.3.17",
-  "author": "Christian Bager Bach Houmann <christian@bagerbach.com>",
+  "author": "Mohammed Al Jahwari <scale-stray-flinch@duck.com>",
   "publishConfig": {
     "access": "public"
   },
