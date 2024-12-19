@@ -62,7 +62,7 @@ function hasOwn<T extends object, K extends PropertyKey>(
 export const configPath = path.join(os.homedir(), ".lazycommit");
 
 export interface Config {
-	provider: "openai"; // Removed "google"
+	provider: "openai" | "google";
 	API_KEY: string;
 	model: string;
 	templates: Record<string, string>;
@@ -71,7 +71,7 @@ export interface Config {
 const DEFAULT_CONFIG: Config = {
 	provider: "openai",
 	API_KEY: "",
-	model: "gpt-4o",
+	model: "gpt-4",
 	templates: {
 		default: path.join(os.homedir(), ".lazycommit-template"),
 	},
@@ -233,10 +233,8 @@ export async function showConfigUI() {
 			const provider = await p.select({
 				message: "Provider",
 				options: [
-					{
-						label: "OpenAI",
-						value: "openai",
-						},
+					{ label: "OpenAI", value: "openai" },
+					{ label: "Google", value: "google" },
 				],
 				initialValue: config.provider,
 			});
@@ -268,7 +266,14 @@ async function getModels() {
 		});
 		const models = await oai.models.list();
 		return models.data.map((model) => model.id);
-	} else {
-		throw new Error("Invalid provider");
+	} else if (provider === "google") {
+		return [
+			"gemini-2.0-flash-exp",
+			"gemini-1.5-pro-latest",
+			"gemini-1.5-pro",
+			"gemini-1.5-flash-latest",
+			"gemini-1.5-flash",
+		];
 	}
+	throw new Error("Invalid provider");
 }

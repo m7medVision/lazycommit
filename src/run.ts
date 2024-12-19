@@ -1,5 +1,6 @@
 import { $ } from "bun";
 import { createOpenAI } from "@ai-sdk/openai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateText } from "ai";
 import { readConfigFile } from "./config";
 import simpleGit from "simple-git";
@@ -93,14 +94,23 @@ export async function run(options: RunOptions, templateName?: string) {
   const system_message =
     "You are a commit message generator. I will provide you with a git diff, and I would like you to generate an appropriate commit message using the conventional commit format. Do not write any explanations or other words, just reply with the commit message.";
 
-  const aiProvider = createOpenAI({
-    compatibility: 'strict',
-    apiKey: config.API_KEY,
-  });
-
   try {
     if (options.verbose) {
-      console.debug("Sending request to OpenAI service...");
+      console.debug("Sending request to AI service...");
+    }
+
+    let aiProvider;
+    if (config.provider === "openai") {
+      aiProvider = createOpenAI({
+        compatibility: 'strict',
+        apiKey: config.API_KEY,
+      });
+    } else if (config.provider === "google") {
+      aiProvider = createGoogleGenerativeAI({
+        apiKey: config.API_KEY,
+      });
+    } else {
+      throw new Error("Invalid provider");
     }
 
     const { text } = await generateText({
@@ -109,7 +119,7 @@ export async function run(options: RunOptions, templateName?: string) {
     });
 
     if (options.verbose) {
-      console.debug("Response received from OpenAI service.");
+      console.debug("Response received from AI service.");
       console.debug(text);
     }
 
@@ -120,7 +130,7 @@ export async function run(options: RunOptions, templateName?: string) {
     }
 
   } catch (error) {
-    console.error(`Failed to fetch from OpenAI service: ${error}`);
+    console.error(`Failed to fetch from AI service: ${error}`);
     process.exit(1);
   }
 }
