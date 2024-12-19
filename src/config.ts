@@ -62,7 +62,7 @@ function hasOwn<T extends object, K extends PropertyKey>(
 export const configPath = path.join(os.homedir(), ".lazycommit");
 
 export interface Config {
-	provider: "openai" | "google";
+	provider: "openai"; // Removed "google"
 	API_KEY: string;
 	model: string;
 	templates: Record<string, string>;
@@ -236,11 +236,7 @@ export async function showConfigUI() {
 					{
 						label: "OpenAI",
 						value: "openai",
-					},
-					{
-						label: "Google",
-						value: "google",
-					},
+						},
 				],
 				initialValue: config.provider,
 			});
@@ -267,15 +263,11 @@ async function getModels() {
 		throw new Error("API_KEY is not set");
 	}
 	if (provider === "openai") {
-
 		const oai = new OpenAI({
 			apiKey,
 		});
-
 		const models = await oai.models.list();
 		return models.data.map((model) => model.id);
-	} else if (provider === "google") {
-		return ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.5-pro-002", "gemini-1.5-flash-8b", "gemini-1.5-flash-002"];
 	} else {
 		throw new Error("Invalid provider");
 	}
