@@ -12,12 +12,20 @@ async function editFile(filePath: string, onExit: () => void) {
 			message: "Select an editor",
 			options: [
 				{
+					label: "neovim",
+					value: "nvim",
+				},
+				{
 					label: "vim",
 					value: "vim",
 				},
 				{
 					label: "nano",
 					value: "nano",
+				},
+				{
+					label: "code",
+					value: "code",
 				},
 				{
 					label: "cancel",
