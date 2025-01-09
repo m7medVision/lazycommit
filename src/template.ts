@@ -46,11 +46,15 @@ you have to be creative and think about the best commit message that can describ
 
 Keep in mind you will suggest 10 commit messages. Only 1 will be used. It's better to push yourself (esp to synthesize to a higher level) and maybe wrong about some of the 10 commits because only one needs to be good. I'm looking for your best commit, not the best average commit. It's better to cover more scenarios than include a lot of overlap.
 
-Write your 10 commit messages below, in the format json list format below:
-{
-  commitMessages: [
-    "message",
-    "message"
-  ]
-}
+write the commits messages like this way:
+1. <commit message>
+2. <commit message>
+3. <commit message>
+4. <commit message>
+5. <commit message>
+6. <commit message>
+7. <commit message>
+8. <commit message>
+9. <commit message>
+10. <commit message>
 `;
