@@ -80,7 +80,8 @@ export interface Config {
 const DEFAULT_CONFIG: Config = {
 	provider: "openai",
 	API_KEY: "",
-	model: "gpt-4",
+	customEndpoint: "",
+	model: "gpt-4o",
 	templates: {
 		default: path.join(os.homedir(), ".lazycommit-template"),
 	},
@@ -283,6 +284,15 @@ async function getModels() {
 		throw new Error("API_KEY is not set");
 	}
 	if (provider === "openai") {
+		const oai = new OpenAI({
+			apiKey,
+		});
+		const models = await oai.models.list();
+		return models.data.map((model) => model.id);
+	} else if (provider === "custom") {
+		if (!config.customEndpoint) {
+			throw new Error("Custom endpoint is not set");
+		}
 		const oai = new OpenAI({
 			apiKey,
 			baseURL: config.customEndpoint,
