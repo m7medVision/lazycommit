@@ -12,12 +12,20 @@ async function editFile(filePath: string, onExit: () => void) {
 			message: "Select an editor",
 			options: [
 				{
+					label: "neovim",
+					value: "nvim",
+				},
+				{
 					label: "vim",
 					value: "vim",
 				},
 				{
 					label: "nano",
 					value: "nano",
+				},
+				{
+					label: "code",
+					value: "code",
 				},
 				{
 					label: "cancel",
@@ -62,16 +70,18 @@ function hasOwn<T extends object, K extends PropertyKey>(
 export const configPath = path.join(os.homedir(), ".lazycommit");
 
 export interface Config {
-	provider: "openai" | "google";
+	provider: "openai" | "google" | "custom";
 	API_KEY: string;
 	model: string;
 	templates: Record<string, string>;
+	customEndpoint?: string;
 }
 
 const DEFAULT_CONFIG: Config = {
 	provider: "openai",
 	API_KEY: "",
-	model: "gpt-4",
+	customEndpoint: "",
+	model: "gpt-4o",
 	templates: {
 		default: path.join(os.homedir(), ".lazycommit-template"),
 	},
@@ -158,6 +168,11 @@ export async function showConfigUI() {
 					hint: "edit the prompt template",
 				},
 				{
+					label: "Custom Endpoint",
+					value: "customEndpoint",
+					hint: config.customEndpoint || "not set",
+				},
+				{
 					label: "Done", // Changed from "Cancel" to "Done"
 					value: "done",
 					hint: "exit",
@@ -235,11 +250,19 @@ export async function showConfigUI() {
 				options: [
 					{ label: "OpenAI", value: "openai" },
 					{ label: "Google", value: "google" },
+					{ label: "Custom", value: "custom" },
 				],
 				initialValue: config.provider,
 			});
 
 			await setConfigs([["provider", provider as string]]);
+		} else if (choice === "customEndpoint") {
+			const customEndpoint = await p.text({
+				message: "Custom Endpoint",
+				initialValue: config.customEndpoint,
+			});
+
+			await setConfigs([["customEndpoint", customEndpoint as string]]);
 		}
 
 		if (p.isCancel(choice)) {
@@ -263,6 +286,16 @@ async function getModels() {
 	if (provider === "openai") {
 		const oai = new OpenAI({
 			apiKey,
+		});
+		const models = await oai.models.list();
+		return models.data.map((model) => model.id);
+	} else if (provider === "custom") {
+		if (!config.customEndpoint) {
+			throw new Error("Custom endpoint is not set");
+		}
+		const oai = new OpenAI({
+			apiKey,
+			baseURL: config.customEndpoint,
 		});
 		const models = await oai.models.list();
 		return models.data.map((model) => model.id);

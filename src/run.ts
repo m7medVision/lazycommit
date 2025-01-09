@@ -109,6 +109,12 @@ export async function run(options: RunOptions, templateName?: string) {
       aiProvider = createGoogleGenerativeAI({
         apiKey: config.API_KEY,
       });
+    } else if (config.provider === "custom") {
+      aiProvider = createOpenAI({
+        compatibility: 'strict',
+        apiKey: config.API_KEY,
+        baseURL: config.customEndpoint
+      })
     } else {
       throw new Error("Invalid provider");
     }
