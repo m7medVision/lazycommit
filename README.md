@@ -72,3 +72,7 @@ customCommands:
   check out these other projects that inspired this one:
 
 - https://github.com/BuilderIO/ai-shell
+
+## Custom Endpoint
+
+You can now specify a custom endpoint for using OpenAI-like APIs. To set a custom endpoint, use the `bunx @m7medvision/lazycommit@latest config` command and select the "Custom Endpoint" option. This allows you to use different API endpoints that are compatible with OpenAI.

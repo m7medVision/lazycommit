@@ -104,6 +104,7 @@ export async function run(options: RunOptions, templateName?: string) {
       aiProvider = createOpenAI({
         compatibility: 'strict',
         apiKey: config.API_KEY,
+        baseURL: config.customEndpoint,
       });
     } else if (config.provider === "google") {
       aiProvider = createGoogleGenerativeAI({
