@@ -46,20 +46,20 @@ var commitCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		var model string
+		if providerName == "copilot" || providerName == "openai" {
+			var err error
+			model, err = config.GetModel()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error getting model: %v\n", err)
+				os.Exit(1)
+			}
+		}
+
 		switch providerName {
 		case "copilot":
-			model, err := config.GetModel()
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error getting model: %v\n", err)
-				os.Exit(1)
-			}
 			aiProvider = provider.NewCopilotProviderWithModel(apiKey, model)
 		case "openai":
-			model, err := config.GetModel()
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error getting model: %v\n", err)
-				os.Exit(1)
-			}
 			aiProvider = provider.NewOpenAIProvider(apiKey, model)
 		default:
 			// Default to copilot if provider is not set or unknown
