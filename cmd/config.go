@@ -6,6 +6,7 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/m7medvision/lazycommit/internal/config"
+	"github.com/m7medvision/lazycommit/internal/provider/models"
 	"github.com/spf13/cobra"
 )
 
@@ -47,7 +48,7 @@ func runInteractiveConfig() {
 
 	providerPrompt := &survey.Select{
 		Message: "Choose a provider:",
-		Options: []string{"openai", "copilot"},
+		Options: []string{"openai", "openrouter", "copilot"},
 		Default: currentProvider,
 	}
 	var selectedProvider string
@@ -87,9 +88,26 @@ func runInteractiveConfig() {
 		}
 	}
 
+	// Dynamically generate available models for OpenAI
 	availableModels := map[string][]string{
-		"openai":  {"gpt-4", "gpt-3.5-turbo", "gpt-4o"},
-		"copilot": {"gpt-4o"},
+		"openai":     {},
+		"openrouter": {},
+		"copilot":    {"gpt-4o"}, // TODO: update if copilot models are dynamic
+	}
+
+	modelDisplayToID := map[string]string{}
+	if selectedProvider == "openai" {
+		for id, m := range models.OpenAIModels {
+			display := fmt.Sprintf("%s (%s)", m.Name, string(id))
+			availableModels["openai"] = append(availableModels["openai"], display)
+			modelDisplayToID[display] = string(id)
+		}
+	} else if selectedProvider == "openrouter" {
+		for id, m := range models.OpenRouterModels {
+			display := fmt.Sprintf("%s (%s)", m.Name, string(id))
+			availableModels["openrouter"] = append(availableModels["openrouter"], display)
+			modelDisplayToID[display] = string(id)
+		}
 	}
 
 	modelPrompt := &survey.Select{
@@ -97,22 +115,40 @@ func runInteractiveConfig() {
 		Options: availableModels[selectedProvider],
 	}
 
+	// Try to set the default to the current model if possible
 	isValidDefault := false
-	for _, model := range availableModels[selectedProvider] {
-		if model == currentModel {
-			isValidDefault = true
-			break
+	currentDisplay := ""
+	if selectedProvider == "openai" || selectedProvider == "openrouter" {
+		for display, id := range modelDisplayToID {
+			if id == currentModel || display == currentModel {
+				isValidDefault = true
+				currentDisplay = display
+				break
+			}
+		}
+	} else {
+		for _, model := range availableModels[selectedProvider] {
+			if model == currentModel {
+				isValidDefault = true
+				currentDisplay = model
+				break
+			}
 		}
 	}
 	if isValidDefault {
-		modelPrompt.Default = currentModel
+		modelPrompt.Default = currentDisplay
 	}
 
-	var selectedModel string
-	err = survey.AskOne(modelPrompt, &selectedModel)
+	var selectedDisplay string
+	err = survey.AskOne(modelPrompt, &selectedDisplay)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
+	}
+
+	selectedModel := selectedDisplay
+	if selectedProvider == "openai" || selectedProvider == "openrouter" {
+		selectedModel = modelDisplayToID[selectedDisplay]
 	}
 
 	if selectedModel != currentModel {
