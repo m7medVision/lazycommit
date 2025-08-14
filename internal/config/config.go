@@ -84,19 +84,16 @@ func GetActiveProviderConfig() (*ProviderConfig, error) {
 
 // GetAPIKey returns the API key for the active provider.
 func GetAPIKey() (string, error) {
-	providerConfig, err := GetActiveProviderConfig()
-	if err != nil {
-		// If config for the provider doesn't exist, that's an issue.
-		// However, for copilot, we can try to load the token directly.
-		if cfg.ActiveProvider == "copilot" {
-			return LoadGitHubToken()
-		}
-		return "", err
+	if cfg == nil {
+		InitConfig()
 	}
-
-	// Special handling for copilot to always prefer a freshly loaded token.
 	if cfg.ActiveProvider == "copilot" {
 		return LoadGitHubToken()
+	}
+
+	providerConfig, err := GetActiveProviderConfig()
+	if err != nil {
+		return "", err
 	}
 
 	if providerConfig.APIKey == "" {
