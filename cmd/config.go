@@ -14,9 +14,6 @@ var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Manage configuration for lazycommit",
 	Long:  `Configure the provider, model, and other settings for lazycommit.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		runInteractiveConfig()
-	},
 }
 
 var getCmd = &cobra.Command{
