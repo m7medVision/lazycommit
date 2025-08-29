@@ -34,8 +34,9 @@ func InitConfig() {
 		fmt.Println("Error getting home directory:", err)
 		os.Exit(1)
 	}
-	viper.AddConfigPath(home)
-	viper.AddConfigPath(".") // Also look in the current directory
+	viper.AddConfigPath(".")            // Look in the current directory first
+	viper.AddConfigPath(home)           // Then home directory
+	viper.AddConfigPath(getConfigDir()) // Finally ~/.config directory
 
 	// Set defaults based on available credentials
 	if token, err := LoadGitHubToken(); err == nil && token != "" {
