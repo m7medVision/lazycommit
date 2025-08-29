@@ -100,7 +100,19 @@ func GetAPIKey() (string, error) {
 		return "", fmt.Errorf("API key for provider '%s' is not set", cfg.ActiveProvider)
 	}
 
-	return providerConfig.APIKey, nil
+	apiKey := providerConfig.APIKey
+
+	// Check if the API key is an environment variable reference
+	if strings.HasPrefix(apiKey, "$") {
+		envVarName := strings.TrimPrefix(apiKey, "$")
+		envValue := os.Getenv(envVarName)
+		if envValue == "" {
+			return "", fmt.Errorf("environment variable '%s' for provider '%s' is not set or empty", envVarName, cfg.ActiveProvider)
+		}
+		return envValue, nil
+	}
+
+	return apiKey, nil
 }
 
 // GetModel returns the model for the active provider.
