@@ -60,7 +60,7 @@ lazycommit commit | fzf --prompt='Pick commit> ' | xargs -r -I {} git commit -m 
 
 ## Configuration
 
-Configuration file: `.lazycommit.yaml` in $HOME or project root.
+- Config directory (`~/.config/.lazycommit.yaml`
 
 ```yaml
 active_provider: copilot # default if a GitHub token is found
