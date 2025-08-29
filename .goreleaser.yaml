@@ -1,0 +1,51 @@
+project_name: lazycommit
+
+release:
+  prerelease: false
+  github:
+    owner: m7medVision
+    name: lazycommit
+
+builds:
+  - id: lazycommit
+    main: ./main.go
+    binary: lazycommit
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w
+
+archives:
+  - id: archive
+    builds: [lazycommit]
+    format_overrides:
+      - goos: windows
+        format: zip
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  use: git
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+brews:
+  - name: lazycommit
+    repository:
+      owner: m7medVision
+      name: homebrew-tap
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    directory: Formula
+    homepage: "https://github.com/m7medVision/lazycommit"
+    description: "AI-powered conventional commits CLI"
+    license: "MIT"
+    test: |
+      system "#{bin}/lazycommit", "--help"
