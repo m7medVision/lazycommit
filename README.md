@@ -51,7 +51,7 @@ lazycommit commit -a
 
 ## Configuration
 
-Create a `.lazycommit.yaml` file in your home directory or project root:
+- Config directory (`~/.config/.lazycommit.yaml`)
 
 ```yaml
 active_provider: openai
