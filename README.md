@@ -51,9 +51,6 @@ lazycommit commit -a
 
 ## Configuration
 
-Create a `.lazycommit.yaml` file in one of these locations (checked in order):
-- Current directory (`./.lazycommit.yaml`)
-- Home directory (`~/.lazycommit.yaml`)
 - Config directory (`~/.config/.lazycommit.yaml`)
 
 ```yaml
