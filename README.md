@@ -60,7 +60,7 @@ providers:
     api_key: "your-openai-api-key"
     model: "gpt-4o"
   openrouter:
-    api_key: "your-openrouter-api-key"
+    api_key: "$env-your-openrouter-api-key"
     model: "anthropic/claude-3-opus"
   copilot:
     # No API key needed, it uses the GitHub CLI token
