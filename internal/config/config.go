@@ -11,13 +11,11 @@ import (
 	"github.com/spf13/viper"
 )
 
-// ProviderConfig holds the configuration for a single LLM provider.
 type ProviderConfig struct {
 	APIKey string `mapstructure:"api_key"`
 	Model  string `mapstructure:"model"`
 }
 
-// Config is the main configuration structure for the application.
 type Config struct {
 	Providers      map[string]ProviderConfig `mapstructure:"providers"`
 	ActiveProvider string                    `mapstructure:"active_provider"`
@@ -25,24 +23,16 @@ type Config struct {
 
 var cfg *Config
 
-// InitConfig initializes the configuration from environment variables and config files.
 func InitConfig() {
 	viper.SetConfigName(".lazycommit")
 	viper.SetConfigType("yaml")
-	home, err := os.UserHomeDir()
-	if err != nil {
-		fmt.Println("Error getting home directory:", err)
-		os.Exit(1)
-	}
-	viper.AddConfigPath(".")            // Look in the current directory first
-	viper.AddConfigPath(home)           // Then home directory
-	viper.AddConfigPath(getConfigDir()) // Finally ~/.config directory
+	viper.AddConfigPath(getConfigDir())
+	viper.SetConfigFile(filepath.Join(getConfigDir(), ".lazycommit.yaml"))
 
-	// Set defaults based on available credentials
 	if token, err := LoadGitHubToken(); err == nil && token != "" {
 		viper.SetDefault("active_provider", "copilot")
 		viper.SetDefault("providers.copilot.api_key", token)
-		viper.SetDefault("providers.copilot.model", "openai/gpt-4o") // Use GitHub Models format
+		viper.SetDefault("providers.copilot.model", "openai/gpt-4o")
 	} else {
 		viper.SetDefault("active_provider", "openai")
 		viper.SetDefault("providers.openai.model", "gpt-3.5-turbo")
@@ -51,7 +41,17 @@ func InitConfig() {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			cfgDir := getConfigDir()
+			_ = os.MkdirAll(cfgDir, 0o755)
+			cfgPath := filepath.Join(cfgDir, ".lazycommit.yaml")
+			if writeErr := viper.WriteConfigAs(cfgPath); writeErr != nil {
+				fmt.Println("Error creating default config file:", writeErr)
+			} else {
+				fmt.Printf("Created default config at %s\n", cfgPath)
+			}
+			_ = viper.ReadInConfig()
+		} else {
 			fmt.Println("Error reading config file:", err)
 		}
 	}
@@ -62,7 +62,6 @@ func InitConfig() {
 	}
 }
 
-// GetProvider returns the active provider's name.
 func GetProvider() string {
 	if cfg == nil {
 		InitConfig()
@@ -70,7 +69,6 @@ func GetProvider() string {
 	return cfg.ActiveProvider
 }
 
-// GetActiveProviderConfig returns the configuration for the currently active provider.
 func GetActiveProviderConfig() (*ProviderConfig, error) {
 	if cfg == nil {
 		InitConfig()
@@ -83,7 +81,6 @@ func GetActiveProviderConfig() (*ProviderConfig, error) {
 	return &providerConfig, nil
 }
 
-// GetAPIKey returns the API key for the active provider.
 func GetAPIKey() (string, error) {
 	if cfg == nil {
 		InitConfig()
@@ -104,7 +101,6 @@ func GetAPIKey() (string, error) {
 	return providerConfig.APIKey, nil
 }
 
-// GetModel returns the model for the active provider.
 func GetModel() (string, error) {
 	providerConfig, err := GetActiveProviderConfig()
 	if err != nil {
@@ -116,7 +112,6 @@ func GetModel() (string, error) {
 	return providerConfig.Model, nil
 }
 
-// SetProvider sets the active provider and saves the config.
 func SetProvider(provider string) error {
 	if cfg == nil {
 		InitConfig()
@@ -126,7 +121,6 @@ func SetProvider(provider string) error {
 	return viper.WriteConfig()
 }
 
-// SetModel sets the model for the active provider and saves the config.
 func SetModel(model string) error {
 	if cfg == nil {
 		InitConfig()
@@ -136,7 +130,6 @@ func SetModel(model string) error {
 	return viper.WriteConfig()
 }
 
-// SetAPIKey sets the API key for a specific provider and saves the config.
 func SetAPIKey(provider, apiKey string) error {
 	if cfg == nil {
 		InitConfig()
@@ -145,23 +138,17 @@ func SetAPIKey(provider, apiKey string) error {
 	return viper.WriteConfig()
 }
 
-// LoadGitHubToken tries to load a GitHub token with models scope from standard locations.
 func LoadGitHubToken() (string, error) {
-	// First check environment variable (recommended approach)
 	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
 		return token, nil
 	}
 
-	// Also check for a GitHub Models specific token
 	if token := os.Getenv("GITHUB_MODELS_TOKEN"); token != "" {
 		return token, nil
 	}
 
-	// Fallback: try to find tokens from GitHub Copilot IDE installations
-	// Note: These tokens may not have the required 'models' scope
 	configDir := getConfigDir()
 
-	// Try both hosts.json and apps.json files
 	filePaths := []string{
 		filepath.Join(configDir, "github-copilot", "hosts.json"),
 		filepath.Join(configDir, "github-copilot", "apps.json"),
