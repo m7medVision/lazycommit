@@ -12,8 +12,9 @@ import (
 )
 
 type ProviderConfig struct {
-	APIKey string `mapstructure:"api_key"`
-	Model  string `mapstructure:"model"`
+	APIKey  string `mapstructure:"api_key"`
+	Model   string `mapstructure:"model"`
+	BaseURL string `mapstructure:"base_url"`
 }
 
 type Config struct {
@@ -147,6 +148,22 @@ func SetAPIKey(provider, apiKey string) error {
 		InitConfig()
 	}
 	viper.Set(fmt.Sprintf("providers.%s.api_key", provider), apiKey)
+	return viper.WriteConfig()
+}
+
+func GetBaseURL() (string, error) {
+	providerConfig, err := GetActiveProviderConfig()
+	if err != nil {
+		return "", err
+	}
+	return providerConfig.BaseURL, nil
+}
+
+func SetBaseURL(provider, baseURL string) error {
+	if cfg == nil {
+		InitConfig()
+	}
+	viper.Set(fmt.Sprintf("providers.%s.base_url", provider), baseURL)
 	return viper.WriteConfig()
 }
 

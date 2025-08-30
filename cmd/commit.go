@@ -47,12 +47,18 @@ var commitCmd = &cobra.Command{
 		}
 
 		var model string
-		if providerName == "copilot" || providerName == "openai" {
+		var baseURL string
+		if providerName == "copilot" || providerName == "openai" || providerName == "openrouter" {
 			var err error
 			model, err = config.GetModel()
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error getting model: %v\n", err)
 				os.Exit(1)
+			}
+			
+			// Get base URL for custom endpoints (mainly for openai)
+			if providerName == "openai" {
+				baseURL, _ = config.GetBaseURL() // Ignore error, empty baseURL is fine
 			}
 		}
 
@@ -60,7 +66,9 @@ var commitCmd = &cobra.Command{
 		case "copilot":
 			aiProvider = provider.NewCopilotProviderWithModel(apiKey, model)
 		case "openai":
-			aiProvider = provider.NewOpenAIProvider(apiKey, model)
+			aiProvider = provider.NewOpenAIProviderWithBaseURL(apiKey, model, baseURL)
+		case "openrouter":
+			aiProvider = provider.NewOpenRouterProvider(apiKey, model)
 		default:
 			// Default to copilot if provider is not set or unknown
 			aiProvider = provider.NewCopilotProvider(apiKey)

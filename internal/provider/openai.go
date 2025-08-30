@@ -13,17 +13,35 @@ type OpenAIProvider struct {
 }
 
 func NewOpenAIProvider(apiKey, model string) *OpenAIProvider {
+	return NewOpenAIProviderWithBaseURL(apiKey, model, "")
+}
+
+func NewOpenAIProviderWithBaseURL(apiKey, model, baseURL string) *OpenAIProvider {
 	if model == "" {
 		model = "gpt-3.5-turbo"
 	}
-	client := openai.NewClient(
-		option.WithAPIKey(apiKey),
-	)
-	return &OpenAIProvider{
-		commonProvider: commonProvider{
-			client: &client,
-			model:  model,
-		},
+	
+	if baseURL != "" {
+		client := openai.NewClient(
+			option.WithAPIKey(apiKey),
+			option.WithBaseURL(baseURL),
+		)
+		return &OpenAIProvider{
+			commonProvider: commonProvider{
+				client: &client,
+				model:  model,
+			},
+		}
+	} else {
+		client := openai.NewClient(
+			option.WithAPIKey(apiKey),
+		)
+		return &OpenAIProvider{
+			commonProvider: commonProvider{
+				client: &client,
+				model:  model,
+			},
+		}
 	}
 }
 

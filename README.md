@@ -71,6 +71,7 @@ providers:
   openai:
     api_key: "$OPENAI_API_KEY"
     model: "gpt-4o"
+    base_url: "https://api.openai.com/v1"  # optional custom endpoint
   openrouter:
     api_key: "$OPENROUTER_API_KEY" # or a literal key
     model: "openai/gpt-4o"         # OpenRouter model IDs, e.g. anthropic/claude-3.5-sonnet
@@ -78,6 +79,7 @@ providers:
 
 Notes:
 - Copilot: requires a GitHub token with models scope. The tool can also discover IDE Copilot tokens, but models scope is recommended.
+- OpenAI: supports custom endpoints via `base_url` for OpenAI-compatible APIs (e.g., Azure OpenAI, local LLM servers)
 - Environment variable references are supported by prefixing with `$` (e.g., `$OPENAI_API_KEY`).
 
 ### Configure via CLI
@@ -86,6 +88,32 @@ Notes:
 lazycommit config set     # interactive provider/model/key picker
 lazycommit config get     # show current provider/model
 ```
+
+### Custom Endpoints
+
+For the OpenAI provider, you can specify a custom `base_url` to use OpenAI-compatible APIs:
+
+**Examples:**
+
+Azure OpenAI:
+```yaml
+providers:
+  openai:
+    api_key: "$AZURE_OPENAI_API_KEY"
+    model: "gpt-4"
+    base_url: "https://your-resource.openai.azure.com/openai/deployments/your-deployment/chat/completions"
+```
+
+Local LLM server (e.g., Ollama, LM Studio):
+```yaml
+providers:
+  openai:
+    api_key: "dummy-key"  # some local servers require any non-empty key
+    model: "llama2"
+    base_url: "http://localhost:11434/v1"
+```
+
+The CLI config command will prompt for the base URL when selecting the OpenAI provider.
 
 ## Integration with TUI Git clients
 

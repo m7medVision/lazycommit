@@ -28,6 +28,14 @@ var getCmd = &cobra.Command{
 		}
 		fmt.Printf("Active Provider: %s\n", provider)
 		fmt.Printf("Model: %s\n", model)
+		
+		// Show base URL if set for OpenAI provider
+		if provider == "openai" {
+			baseURL, err := config.GetBaseURL()
+			if err == nil && baseURL != "" {
+				fmt.Printf("Base URL: %s\n", baseURL)
+			}
+		}
 	},
 }
 
@@ -82,6 +90,27 @@ func runInteractiveConfig() {
 				return
 			}
 			fmt.Printf("API key for %s set.\n", selectedProvider)
+		}
+	}
+
+	// Ask for custom base URL if using OpenAI provider
+	if selectedProvider == "openai" {
+		baseURLPrompt := &survey.Input{
+			Message: "Enter custom API base URL (leave empty for default OpenAI endpoint):",
+		}
+		var baseURL string
+		err := survey.AskOne(baseURLPrompt, &baseURL)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		if baseURL != "" {
+			err := config.SetBaseURL(selectedProvider, baseURL)
+			if err != nil {
+				fmt.Printf("Error setting base URL: %v\n", err)
+				return
+			}
+			fmt.Printf("Base URL for %s set to: %s\n", selectedProvider, baseURL)
 		}
 	}
 
