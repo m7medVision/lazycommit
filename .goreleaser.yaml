@@ -35,17 +35,4 @@ changelog:
       - '^docs:'
       - '^test:'
 
-brews:
-  - name: lazycommit
-    repository:
-      owner: m7medVision
-      name: homebrew-tap
-    commit_author:
-      name: goreleaserbot
-      email: bot@goreleaser.com
-    directory: Formula
-    homepage: "https://github.com/m7medVision/lazycommit"
-    description: "AI-powered conventional commits CLI"
-    license: "MIT"
-    test: |
-      system "#{bin}/lazycommit", "--help"
+
