@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -12,8 +13,9 @@ import (
 )
 
 type ProviderConfig struct {
-	APIKey string `mapstructure:"api_key"`
-	Model  string `mapstructure:"model"`
+	APIKey     string `mapstructure:"api_key"`
+	Model      string `mapstructure:"model"`
+	EndpointURL string `mapstructure:"endpoint_url"`
 }
 
 type Config struct {
@@ -124,6 +126,28 @@ func GetModel() (string, error) {
 	return providerConfig.Model, nil
 }
 
+func GetEndpoint() (string, error) {
+	providerConfig, err := GetActiveProviderConfig()
+	if err != nil {
+		return "", err
+	}
+
+	// If custom endpoint is configured, use it
+	if providerConfig.EndpointURL != "" {
+		return providerConfig.EndpointURL, nil
+	}
+
+	// Return default endpoints based on provider
+	switch cfg.ActiveProvider {
+	case "openai":
+		return "https://api.openai.com/v1", nil
+	case "copilot":
+		return "https://api.githubcopilot.com", nil
+	default:
+		return "", fmt.Errorf("no default endpoint available for provider '%s'", cfg.ActiveProvider)
+	}
+}
+
 func SetProvider(provider string) error {
 	if cfg == nil {
 		InitConfig()
@@ -147,6 +171,41 @@ func SetAPIKey(provider, apiKey string) error {
 		InitConfig()
 	}
 	viper.Set(fmt.Sprintf("providers.%s.api_key", provider), apiKey)
+	return viper.WriteConfig()
+}
+
+func validateEndpointURL(endpoint string) error {
+	if endpoint == "" {
+		return nil // Empty endpoint is valid (will use default)
+	}
+
+	parsedURL, err := url.Parse(endpoint)
+	if err != nil {
+		return fmt.Errorf("invalid URL format: %w", err)
+	}
+
+	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
+		return fmt.Errorf("endpoint must use http or https protocol")
+	}
+
+	if parsedURL.Host == "" {
+		return fmt.Errorf("endpoint must have a valid host")
+	}
+
+	return nil
+}
+
+func SetEndpoint(provider, endpoint string) error {
+	if cfg == nil {
+		InitConfig()
+	}
+
+	// Validate endpoint URL
+	if err := validateEndpointURL(endpoint); err != nil {
+		return err
+	}
+
+	viper.Set(fmt.Sprintf("providers.%s.endpoint_url", provider), endpoint)
 	return viper.WriteConfig()
 }
 

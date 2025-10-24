@@ -16,22 +16,31 @@ import (
 type CopilotProvider struct {
 	apiKey     string
 	model      string
+	endpoint   string
 	httpClient *http.Client
 }
 
-func NewCopilotProvider(token string) *CopilotProvider {
+func NewCopilotProvider(token, endpoint string) *CopilotProvider {
+	if endpoint == "" {
+		endpoint = "https://api.githubcopilot.com"
+	}
 	return &CopilotProvider{
 		apiKey:     token,
 		model:      "gpt-4o",
+		endpoint:   endpoint,
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 	}
 }
 
-func NewCopilotProviderWithModel(token, model string) *CopilotProvider {
+func NewCopilotProviderWithModel(token, model, endpoint string) *CopilotProvider {
 	m := normalizeCopilotModel(model)
+	if endpoint == "" {
+		endpoint = "https://api.githubcopilot.com"
+	}
 	return &CopilotProvider{
 		apiKey:     token,
 		model:      m,
+		endpoint:   endpoint,
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 	}
 }
@@ -119,7 +128,7 @@ func (c *CopilotProvider) GenerateCommitMessages(ctx context.Context, diff strin
 	}
 
 	client := openai.NewClient(
-		option.WithBaseURL("https://api.githubcopilot.com"),
+		option.WithBaseURL(c.endpoint),
 		option.WithAPIKey(bearer),
 		option.WithHeader("Editor-Version", "lazycommit/1.0"),
 		option.WithHeader("Editor-Plugin-Version", "lazycommit/1.0"),
