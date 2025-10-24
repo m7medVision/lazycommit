@@ -5,7 +5,7 @@ AI-powered Git commit message generator that analyzes your staged changes and ou
 ## Features
 
 - Generates 10 commit message suggestions from your staged diff
-- Providers: GitHub Copilot (default), OpenAI, OpenRouter
+- Providers: GitHub Copilot (default), OpenAI
 - Interactive config to pick provider/model and set keys
 - Simple output suitable for piping into TUI menus (one message per line)
 
@@ -68,24 +68,94 @@ providers:
   copilot:
     api_key: "$GITHUB_TOKEN"   # Uses GitHub token; token is exchanged internally
     model: "gpt-4o"            # or "openai/gpt-4o"; both accepted
+    # endpoint_url: "https://api.githubcopilot.com"  # Optional - uses default if not specified
   openai:
     api_key: "$OPENAI_API_KEY"
     model: "gpt-4o"
-  openrouter:
-    api_key: "$OPENROUTER_API_KEY" # or a literal key
-    model: "openai/gpt-4o"         # OpenRouter model IDs, e.g. anthropic/claude-3.5-sonnet
+    # endpoint_url: "https://api.openai.com/v1"  # Optional - uses default if not specified
+  # Custom provider example (e.g., local Ollama):
+  # local:
+  #   api_key: "not-needed"
+  #   model: "llama3.1:8b"
+  #   endpoint_url: "http://localhost:11434/v1"
 ```
+
+### Custom Endpoints
+
+You can configure custom API endpoints for any provider, which is useful for:
+- **Local AI models**: Ollama, LM Studio, or other local inference servers
+- **Enterprise proxies**: Internal API gateways or proxy servers
+- **Alternative providers**: Any OpenAI-compatible API endpoint
+
+The `endpoint_url` field is optional. If not specified, the official endpoint for that provider will be used.
+
+#### Examples
+
+**Ollama (local):**
+```yaml
+active_provider: openai  # Use openai provider for Ollama compatibility
+providers:
+  openai:
+    api_key: "ollama"  # Ollama doesn't require real API keys
+    model: "llama3.1:8b"
+    endpoint_url: "http://localhost:11434/v1"
+```
+
+**LM Studio (local):**
+```yaml
+active_provider: openai
+providers:
+  openai:
+    api_key: "not-needed"
+    model: "local-model"
+    endpoint_url: "http://localhost:1234/v1"
+```
+
+**Enterprise Proxy:**
+```yaml
+active_provider: openai
+providers:
+  openai:
+    api_key: "$ENTERPRISE_OPENAI_KEY"
+    model: "gpt-4o"
+    endpoint_url: "https://ai-proxy.company.com/openai/v1"
+```
+
+**Z.AI (GLM models):**
+```yaml
+active_provider: openai
+providers:
+  openai:
+    api_key: "$ZAI_API_KEY"
+    model: "glm-4.6"
+    endpoint_url: "https://api.z.ai/api/paas/v4/"
+```
+
+**Available GLM models:**
+- `glm-4.6` - Latest GLM model with strong reasoning capabilities
+- `glm-4.5` - High-performance model with thinking mode support
+- `glm-4.5-air` - Lightweight version of GLM-4.5
+
+To get started with Z.AI:
+1. Register at [Z.AI Open Platform](https://z.ai/model-api)
+2. Create an API key in the [API Keys](https://z.ai/manage-apikey/apikey-list) management page
+3. Set the `ZAI_API_KEY` environment variable or add it to your config
+4. Configure lazycommit as shown above
 
 Notes:
 - Copilot: requires a GitHub token with models scope. The tool can also discover IDE Copilot tokens, but models scope is recommended.
 - Environment variable references are supported by prefixing with `$` (e.g., `$OPENAI_API_KEY`).
+- Custom endpoints must be OpenAI-compatible for proper functionality.
+- Endpoint URLs are validated to ensure they use HTTP/HTTPS protocols and have valid hosts.
 
 ### Configure via CLI
 
 ```bash
-lazycommit config set     # interactive provider/model/key picker
-lazycommit config get     # show current provider/model
+lazycommit config set     # interactive provider/model/key/endpoint picker
+lazycommit config get     # show current provider/model/endpoint
 ```
+
+The interactive setup will now prompt for custom endpoint URLs as well. You can leave this field empty to use the default endpoint for the selected provider.
 
 ## Integration with TUI Git clients
 
@@ -119,7 +189,6 @@ Tips:
 
 - Copilot (default when a GitHub token is available): uses `gpt-4o` unless overridden. Accepts `openai/gpt-4o` and normalizes it to `gpt-4o`.
 - OpenAI: choose from models defined in the interactive picker (e.g., gpt‑4o, gpt‑4.1, o3, o1, etc.).
-- OpenRouter: pick from OpenRouter-prefixed IDs (e.g., `openai/gpt-4o`, `anthropic/claude-3.5-sonnet`). Extra headers are set automatically.
 
 ## How it works
 

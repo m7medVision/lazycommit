@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -26,8 +27,14 @@ var getCmd = &cobra.Command{
 			fmt.Println("Error getting model:", err)
 			os.Exit(1)
 		}
+		endpoint, err := config.GetEndpoint()
+		if err != nil {
+			fmt.Println("Error getting endpoint:", err)
+			os.Exit(1)
+		}
 		fmt.Printf("Active Provider: %s\n", provider)
 		fmt.Printf("Model: %s\n", model)
+		fmt.Printf("Endpoint: %s\n", endpoint)
 	},
 }
 
@@ -39,13 +46,40 @@ var setCmd = &cobra.Command{
 	},
 }
 
+func validateEndpointURL(val interface{}) error {
+	endpoint, ok := val.(string)
+	if !ok {
+		return fmt.Errorf("endpoint must be a string")
+	}
+
+	// Empty string is valid (uses default)
+	if endpoint == "" {
+		return nil
+	}
+
+	parsedURL, err := url.Parse(endpoint)
+	if err != nil {
+		return fmt.Errorf("invalid URL format: %w", err)
+	}
+
+	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
+		return fmt.Errorf("endpoint must use http or https protocol")
+	}
+
+	if parsedURL.Host == "" {
+		return fmt.Errorf("endpoint must have a valid host")
+	}
+
+	return nil
+}
+
 func runInteractiveConfig() {
 	currentProvider := config.GetProvider()
 	currentModel, _ := config.GetModel()
 
 	providerPrompt := &survey.Select{
 		Message: "Choose a provider:",
-		Options: []string{"openai", "openrouter", "copilot"},
+		Options: []string{"openai", "copilot"},
 		Default: currentProvider,
 	}
 	var selectedProvider string
@@ -87,9 +121,8 @@ func runInteractiveConfig() {
 
 	// Dynamically generate available models for OpenAI
 	availableModels := map[string][]string{
-		"openai":     {},
-		"openrouter": {},
-		"copilot":    {"gpt-4o"}, // TODO: update if copilot models are dynamic
+		"openai":  {},
+		"copilot": {"gpt-4o"}, // TODO: update if copilot models are dynamic
 	}
 
 	modelDisplayToID := map[string]string{}
@@ -97,12 +130,6 @@ func runInteractiveConfig() {
 		for id, m := range models.OpenAIModels {
 			display := fmt.Sprintf("%s (%s)", m.Name, string(id))
 			availableModels["openai"] = append(availableModels["openai"], display)
-			modelDisplayToID[display] = string(id)
-		}
-	} else if selectedProvider == "openrouter" {
-		for id, m := range models.OpenRouterModels {
-			display := fmt.Sprintf("%s (%s)", m.Name, string(id))
-			availableModels["openrouter"] = append(availableModels["openrouter"], display)
 			modelDisplayToID[display] = string(id)
 		}
 	}
@@ -115,7 +142,7 @@ func runInteractiveConfig() {
 	// Try to set the default to the current model if possible
 	isValidDefault := false
 	currentDisplay := ""
-	if selectedProvider == "openai" || selectedProvider == "openrouter" {
+	if selectedProvider == "openai" {
 		for display, id := range modelDisplayToID {
 			if id == currentModel || display == currentModel {
 				isValidDefault = true
@@ -144,7 +171,7 @@ func runInteractiveConfig() {
 	}
 
 	selectedModel := selectedDisplay
-	if selectedProvider == "openai" || selectedProvider == "openrouter" {
+	if selectedProvider == "openai" {
 		selectedModel = modelDisplayToID[selectedDisplay]
 	}
 
@@ -155,6 +182,33 @@ func runInteractiveConfig() {
 			return
 		}
 		fmt.Printf("Model set to: %s\n", selectedModel)
+	}
+
+	// Get current endpoint
+	currentEndpoint, _ := config.GetEndpoint()
+
+	// Endpoint configuration prompt
+	endpointPrompt := &survey.Input{
+		Message: "Enter custom endpoint URL (leave empty for default):",
+		Default: currentEndpoint,
+	}
+	var endpoint string
+	err = survey.AskOne(endpointPrompt, &endpoint, survey.WithValidator(validateEndpointURL))
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	// Only set endpoint if it's different from current
+	if endpoint != currentEndpoint && endpoint != "" {
+		err := config.SetEndpoint(selectedProvider, endpoint)
+		if err != nil {
+			fmt.Printf("Error setting endpoint: %v\n", err)
+			return
+		}
+		fmt.Printf("Endpoint set to: %s\n", endpoint)
+	} else if endpoint == "" {
+		fmt.Println("Using default endpoint for provider")
 	}
 }
 

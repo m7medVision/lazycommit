@@ -12,11 +12,18 @@ type OpenAIProvider struct {
 	commonProvider
 }
 
-func NewOpenAIProvider(apiKey, model string) *OpenAIProvider {
+func NewOpenAIProvider(apiKey, model, endpoint string) *OpenAIProvider {
 	if model == "" {
 		model = "gpt-3.5-turbo"
 	}
+
+	// Set default endpoint if none provided
+	if endpoint == "" {
+		endpoint = "https://api.openai.com/v1"
+	}
+
 	client := openai.NewClient(
+		option.WithBaseURL(endpoint),
 		option.WithAPIKey(apiKey),
 	)
 	return &OpenAIProvider{

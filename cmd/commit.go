@@ -56,14 +56,20 @@ var commitCmd = &cobra.Command{
 			}
 		}
 
+		endpoint, err := config.GetEndpoint()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error getting endpoint: %v\n", err)
+			os.Exit(1)
+		}
+
 		switch providerName {
 		case "copilot":
-			aiProvider = provider.NewCopilotProviderWithModel(apiKey, model)
+			aiProvider = provider.NewCopilotProviderWithModel(apiKey, model, endpoint)
 		case "openai":
-			aiProvider = provider.NewOpenAIProvider(apiKey, model)
+			aiProvider = provider.NewOpenAIProvider(apiKey, model, endpoint)
 		default:
 			// Default to copilot if provider is not set or unknown
-			aiProvider = provider.NewCopilotProvider(apiKey)
+			aiProvider = provider.NewCopilotProvider(apiKey, endpoint)
 		}
 
 		commitMessages, err := aiProvider.GenerateCommitMessages(context.Background(), diff)
