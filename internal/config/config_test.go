@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/spf13/viper"
@@ -162,8 +163,8 @@ func TestGetEndpoint_CustomEndpoint(t *testing.T) {
 		cfg.Providers = make(map[string]ProviderConfig)
 	}
 	cfg.Providers[testProvider] = ProviderConfig{
-		APIKey:     "test-key",
-		Model:      "test-model",
+		APIKey:      "test-key",
+		Model:       "test-model",
 		EndpointURL: customEndpoint,
 	}
 
@@ -221,12 +222,12 @@ func TestSetEndpoint_Validation(t *testing.T) {
 		endpoint string
 		valid    bool
 	}{
-		{"", true},                           // Empty should be valid (default)
-		{"https://api.openai.com/v1", true},  // Valid HTTPS URL
-		{"http://localhost:11434", true},     // Valid HTTP URL
-		{"ftp://invalid.com", false},         // Invalid protocol
-		{"not-a-url", false},                 // Invalid format
-		{"https://", false},                  // Missing host
+		{"", true},                          // Empty should be valid (default)
+		{"https://api.openai.com/v1", true}, // Valid HTTPS URL
+		{"http://localhost:11434", true},    // Valid HTTP URL
+		{"ftp://invalid.com", false},        // Invalid protocol
+		{"not-a-url", false},                // Invalid format
+		{"https://", false},                 // Missing host
 	}
 
 	for _, tc := range testCases {
@@ -236,5 +237,49 @@ func TestSetEndpoint_Validation(t *testing.T) {
 		} else if !tc.valid && err == nil {
 			t.Errorf("Expected invalid endpoint %s to fail, but it passed", tc.endpoint)
 		}
+	}
+}
+
+func TestInitConfig_CreatesConfigFile(t *testing.T) {
+	// Create a temporary directory for testing
+	tmpDir := t.TempDir()
+
+	// Save original HOME/XDG_CONFIG_HOME and restore after test
+	originalHome := os.Getenv("HOME")
+	originalXDG := os.Getenv("XDG_CONFIG_HOME")
+	defer func() {
+		os.Setenv("HOME", originalHome)
+		os.Setenv("XDG_CONFIG_HOME", originalXDG)
+	}()
+
+	// Set HOME to temp directory
+	os.Setenv("HOME", tmpDir)
+	os.Unsetenv("XDG_CONFIG_HOME")
+
+	// Reset viper and config
+	cfg = nil
+	viper.Reset()
+
+	// Verify config file doesn't exist
+	expectedConfigPath := filepath.Join(tmpDir, ".config", ".lazycommit.yaml")
+	if _, err := os.Stat(expectedConfigPath); err == nil {
+		t.Fatal("Config file should not exist before InitConfig")
+	}
+
+	// Initialize config
+	InitConfig()
+
+	// Verify config file was created
+	if _, err := os.Stat(expectedConfigPath); os.IsNotExist(err) {
+		t.Fatalf("Config file should have been created at %s", expectedConfigPath)
+	}
+
+	// Verify config is loaded properly
+	if cfg == nil {
+		t.Fatal("Config should be initialized")
+	}
+
+	if cfg.ActiveProvider == "" {
+		t.Error("ActiveProvider should be set")
 	}
 }

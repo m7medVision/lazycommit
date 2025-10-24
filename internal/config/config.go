@@ -13,8 +13,8 @@ import (
 )
 
 type ProviderConfig struct {
-	APIKey     string `mapstructure:"api_key"`
-	Model      string `mapstructure:"model"`
+	APIKey      string `mapstructure:"api_key"`
+	Model       string `mapstructure:"model"`
 	EndpointURL string `mapstructure:"endpoint_url"`
 }
 
@@ -43,7 +43,8 @@ func InitConfig() {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+		// Check if error is due to config file not existing
+		if os.IsNotExist(err) {
 			cfgDir := getConfigDir()
 			_ = os.MkdirAll(cfgDir, 0o755)
 			cfgPath := filepath.Join(cfgDir, ".lazycommit.yaml")
