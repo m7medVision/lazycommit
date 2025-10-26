@@ -122,7 +122,7 @@ func runInteractiveConfig() {
 	// Dynamically generate available models for OpenAI
 	availableModels := map[string][]string{
 		"openai":  {},
-		"copilot": {"gpt-5-mini"}, // TODO: update if copilot models are dynamic
+		"copilot": {"openai/gpt-5-mini"}, // TODO: update if copilot models are dynamic
 	}
 
 	modelDisplayToID := map[string]string{}
