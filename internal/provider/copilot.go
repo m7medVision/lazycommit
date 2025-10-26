@@ -135,13 +135,11 @@ func (c *CopilotProvider) GenerateCommitMessages(ctx context.Context, diff strin
 		option.WithHeader("Copilot-Integration-Id", "vscode-chat"),
 	)
 
-	prompt := fmt.Sprintf("Based on the following git diff, generate 10 conventional commit messages. Each message should be on a new line, without any numbering or bullet points:\n\n%s", diff)
-
 	params := openai.ChatCompletionNewParams{
 		Model: openai.ChatModel(c.model),
 		Messages: []openai.ChatCompletionMessageParamUnion{
-			{OfSystem: &openai.ChatCompletionSystemMessageParam{Content: openai.ChatCompletionSystemMessageParamContentUnion{OfString: openai.String("You are a helpful assistant that generates git commit messages.")}}},
-			{OfUser: &openai.ChatCompletionUserMessageParam{Content: openai.ChatCompletionUserMessageParamContentUnion{OfString: openai.String(prompt)}}},
+			{OfSystem: &openai.ChatCompletionSystemMessageParam{Content: openai.ChatCompletionSystemMessageParamContentUnion{OfString: openai.String(GetSystemMessage())}}},
+			{OfUser: &openai.ChatCompletionUserMessageParam{Content: openai.ChatCompletionUserMessageParamContentUnion{OfString: openai.String(GetCommitMessagePrompt(diff))}}},
 		},
 	}
 
