@@ -34,10 +34,10 @@ func InitConfig() {
 	if token, err := LoadGitHubToken(); err == nil && token != "" {
 		viper.SetDefault("active_provider", "copilot")
 		viper.SetDefault("providers.copilot.api_key", token)
-		viper.SetDefault("providers.copilot.model", "openai/gpt-4o")
+		viper.SetDefault("providers.copilot.model", "openai/gpt-5-mini")
 	} else {
 		viper.SetDefault("active_provider", "openai")
-		viper.SetDefault("providers.openai.model", "gpt-3.5-turbo")
+		viper.SetDefault("providers.openai.model", "gpt-5-mini")
 	}
 
 	viper.AutomaticEnv()
