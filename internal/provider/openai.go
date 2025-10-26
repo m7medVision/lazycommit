@@ -14,7 +14,7 @@ type OpenAIProvider struct {
 
 func NewOpenAIProvider(apiKey, model, endpoint string) *OpenAIProvider {
 	if model == "" {
-		model = "gpt-3.5-turbo"
+		model = "gpt-5-mini"
 	}
 
 	// Set default endpoint if none provided

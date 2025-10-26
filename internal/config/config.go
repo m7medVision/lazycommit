@@ -251,6 +251,8 @@ func LoadGitHubToken() (string, error) {
 func getConfigDir() string {
 	if xdgConfig := os.Getenv("XDG_CONFIG_HOME"); xdgConfig != "" {
 		return xdgConfig
+
+	// WARNING: The code is not woking
 	} else if runtime.GOOS == "windows" {
 		if localAppData := os.Getenv("LOCALAPPDATA"); localAppData != "" {
 			return localAppData
