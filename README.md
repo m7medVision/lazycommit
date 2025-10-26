@@ -149,6 +149,32 @@ customCommands:
         labelFormat: "{{ .raw | green }}"
 ```
 
+This config will allows you to edit the commit message after picking from lazycommit suggestions.
+```yaml
+  - key: "<c-b>" # ctrl + b
+    description: "Pick AI commit (edit before committing)"
+    context: "files"
+    command: >
+      bash -c 'msg="{{.Form.Msg}}"; echo "$msg" > .git/COMMIT_EDITMSG && ${EDITOR:-nvim} .git/COMMIT_EDITMSG && if [ -s .git/COMMIT_EDITMSG ]; then
+
+        git commit -F .git/COMMIT_EDITMSG;
+      else
+
+        echo "Commit message is empty, commit aborted.";
+      fi'
+
+    prompts:
+      - type: "menuFromCommand"
+        title: "ai Commits"
+        key: "Msg"
+        command: "lazycommit commit"
+        filter: '^(?P<raw>.+)$'
+        valueFormat: "{{ .raw }}"
+        labelFormat: "{{ .raw | green }}"
+    output: terminal
+```
+
+
 ## Troubleshooting
 
 - "No staged changes to commit." — run `git add` first.
