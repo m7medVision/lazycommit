@@ -60,7 +60,10 @@ lazycommit commit | fzf --prompt='Pick commit> ' | xargs -r -I {} git commit -m 
 
 ## Configuration
 
-- Config directory (`~/.config/.lazycommit.yaml`
+lazycommit uses a two-file configuration system to separate sensitive provider settings from shareable prompt configurations:
+
+### 1. Provider Configuration (`~/.config/.lazycommit.yaml`)
+Contains API keys, tokens, and provider-specific settings. **Do not share this file.**
 
 ```yaml
 active_provider: copilot # default if a GitHub token is found
@@ -79,6 +82,17 @@ providers:
   #   model: "llama3.1:8b"
   #   endpoint_url: "http://localhost:11434/v1"
 ```
+
+### 2. Prompt Configuration (`~/.config/.lazycommit.prompts.yaml`)
+Contains prompt templates and message configurations. **Safe to share in dotfiles and Git.**
+
+This file is automatically created on first run with sensible defaults:
+
+```yaml
+system_message: "You are a helpful assistant that generates git commit messages."
+commit_message_template: "Based on the following git diff, generate 10 conventional commit messages. Each message should be on a new line, without any numbering or bullet points:\n\n%s"
+```
+
 
 ### Custom Endpoints
 
