@@ -2,9 +2,11 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -58,6 +60,39 @@ func normalizeCopilotModel(model string) string {
 	return m
 }
 
+func (c *CopilotProvider) exchangeGitHubToken(ctx context.Context, githubToken string) (string, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.github.com/copilot_internal/v2/token", nil)
+	if err != nil {
+		return "", fmt.Errorf("failed creating token request: %w", err)
+	}
+	req.Header.Set("Authorization", "Token "+githubToken)
+	req.Header.Set("User-Agent", "lazycommit/1.0")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed exchanging token: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		var body struct {
+			Message string `json:"message"`
+		}
+		_ = json.NewDecoder(resp.Body).Decode(&body)
+		return "", fmt.Errorf("token exchange failed: %d %s", resp.StatusCode, body.Message)
+	}
+	var tr struct {
+		Token     string `json:"token"`
+		ExpiresAt int64  `json:"expires_at"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&tr); err != nil {
+		return "", fmt.Errorf("failed decoding token response: %w", err)
+	}
+	if tr.Token == "" {
+		return "", fmt.Errorf("empty copilot bearer token")
+	}
+	return tr.Token, nil
+}
+
 func (c *CopilotProvider) getGitHubToken() string {
 	if c.apiKey != "" {
 		return c.apiKey
@@ -88,7 +123,19 @@ func (c *CopilotProvider) GenerateCommitMessages(ctx context.Context, diff strin
 		return nil, fmt.Errorf("GitHub token is required for Copilot provider")
 	}
 
-	bearer := githubToken
+	var bearer string
+	var err error
+
+	// On Windows, use the token directly; on other platforms, exchange it for a Copilot token
+	if runtime.GOOS == "windows" {
+		bearer = githubToken
+	} else {
+		bearer, err = c.exchangeGitHubToken(ctx, githubToken)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 
 	client := openai.NewClient(
 		option.WithBaseURL(c.endpoint),
