@@ -46,7 +46,7 @@ var setCmd = &cobra.Command{
 	},
 }
 
-func validateEndpointURL(val interface{}) error {
+func validateEndpointURL(val any) error {
 	endpoint, ok := val.(string)
 	if !ok {
 		return fmt.Errorf("endpoint must be a string")
@@ -122,7 +122,7 @@ func runInteractiveConfig() {
 	// Dynamically generate available models for OpenAI
 	availableModels := map[string][]string{
 		"openai":  {},
-		"copilot": {"gpt-4o"}, // TODO: update if copilot models are dynamic
+		"copilot": {"gpt-5-mini"}, // TODO: update if copilot models are dynamic
 	}
 
 	modelDisplayToID := map[string]string{}
@@ -213,7 +213,6 @@ func runInteractiveConfig() {
 }
 
 func init() {
-	RootCmd.AddCommand(configCmd)
 	configCmd.AddCommand(getCmd)
 	configCmd.AddCommand(setCmd)
 }
