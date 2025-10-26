@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -13,8 +14,8 @@ import (
 )
 
 type ProviderConfig struct {
-	APIKey     string `mapstructure:"api_key"`
-	Model      string `mapstructure:"model"`
+	APIKey      string `mapstructure:"api_key"`
+	Model       string `mapstructure:"model"`
 	EndpointURL string `mapstructure:"endpoint_url"`
 }
 
@@ -37,7 +38,7 @@ func InitConfig() {
 		viper.SetDefault("providers.copilot.model", "openai/gpt-5-mini")
 	} else {
 		viper.SetDefault("active_provider", "openai")
-		viper.SetDefault("providers.openai.model", "gpt-5-mini")
+		viper.SetDefault("providers.openai.model", "openai/gpt-5-mini")
 	}
 
 	viper.AutomaticEnv()
@@ -89,9 +90,6 @@ func GetActiveProviderConfig() (*ProviderConfig, error) {
 func GetAPIKey() (string, error) {
 	if cfg == nil {
 		InitConfig()
-	}
-	if cfg.ActiveProvider == "copilot" {
-		return LoadGitHubToken()
 	}
 
 	providerConfig, err := GetActiveProviderConfig()
@@ -213,12 +211,9 @@ func SetEndpoint(provider, endpoint string) error {
 }
 
 func LoadGitHubToken() (string, error) {
-	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
-		return token, nil
-	}
-
-	if token := os.Getenv("GITHUB_MODELS_TOKEN"); token != "" {
-		return token, nil
+	tok, err := tryGetTokenFromGHCLI()
+	if err == nil && tok != "" {
+		return tok, nil
 	}
 
 	configDir := getConfigDir()
@@ -248,20 +243,30 @@ func LoadGitHubToken() (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("GitHub token not found. Please set GITHUB_TOKEN or GITHUB_MODELS_TOKEN environment variable with a Personal Access Token that has 'models' scope")
+	return "", fmt.Errorf("GitHub token not found via 'gh auth token'; run 'gh auth login' to authenticate the GitHub CLI")
+}
+func tryGetTokenFromGHCLI() (string, error) {
+	out, err := exec.Command("gh", "auth", "token").Output()
+	if err != nil {
+		return "", err
+	}
+	tok := strings.TrimSpace(string(out))
+	if tok == "" {
+		return "", fmt.Errorf("gh returned empty token")
+	}
+	return tok, nil
 }
 
 func getConfigDir() string {
 	if xdgConfig := os.Getenv("XDG_CONFIG_HOME"); xdgConfig != "" {
 		return xdgConfig
-
-	// WARNING: The code is not woking
 	} else if runtime.GOOS == "windows" {
-		if localAppData := os.Getenv("LOCALAPPDATA"); localAppData != "" {
-			return localAppData
-		} else {
-			return filepath.Join(os.Getenv("HOME"), "AppData", "Local")
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			fmt.Println("Error getting user home directory:", err)
+			os.Exit(1)
 		}
+		return filepath.Join(homeDir, "AppData", "Local")
 	} else {
 		return filepath.Join(os.Getenv("HOME"), ".config")
 	}
