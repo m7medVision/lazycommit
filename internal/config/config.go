@@ -62,6 +62,9 @@ func InitConfig() {
 		fmt.Println("Error unmarshalling config:", err)
 		os.Exit(1)
 	}
+
+	// Initialize prompt configuration
+	InitPromptConfig()
 }
 
 func GetProvider() string {
