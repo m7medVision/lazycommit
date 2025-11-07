@@ -14,9 +14,10 @@ import (
 )
 
 type ProviderConfig struct {
-	APIKey      string `mapstructure:"api_key"`
-	Model       string `mapstructure:"model"`
-	EndpointURL string `mapstructure:"endpoint_url"`
+	APIKey         string `mapstructure:"api_key"`
+	Model          string `mapstructure:"model"`
+	EndpointURL    string `mapstructure:"endpoint_url"`
+	NumSuggestions int    `mapstructure:"num_suggestions"`
 }
 
 type Config struct {
@@ -40,6 +41,10 @@ func InitConfig() {
 		viper.SetDefault("active_provider", "openai")
 		viper.SetDefault("providers.openai.model", "openai/gpt-5-mini")
 	}
+
+	// Set defaults for anthropic provider
+	viper.SetDefault("providers.anthropic.model", "claude-haiku-4-5")
+	viper.SetDefault("providers.anthropic.num_suggestions", 10)
 
 	viper.AutomaticEnv()
 
@@ -144,6 +149,8 @@ func GetEndpoint() (string, error) {
 		return "https://api.openai.com/v1", nil
 	case "copilot":
 		return "https://api.githubcopilot.com", nil
+	case "anthropic":
+		return "", nil // Anthropic uses CLI, no endpoint needed
 	default:
 		return "", fmt.Errorf("no default endpoint available for provider '%s'", cfg.ActiveProvider)
 	}
@@ -255,6 +262,28 @@ func tryGetTokenFromGHCLI() (string, error) {
 		return "", fmt.Errorf("gh returned empty token")
 	}
 	return tok, nil
+}
+
+func GetNumSuggestions() int {
+	if cfg == nil {
+		InitConfig()
+	}
+	providerConfig, err := GetActiveProviderConfig()
+	if err != nil {
+		return 10 // Default to 10 if error
+	}
+	if providerConfig.NumSuggestions <= 0 {
+		return 10 // Default to 10 if not set or invalid
+	}
+	return providerConfig.NumSuggestions
+}
+
+func SetNumSuggestions(provider, numSuggestions string) error {
+	if cfg == nil {
+		InitConfig()
+	}
+	viper.Set(fmt.Sprintf("providers.%s.num_suggestions", provider), numSuggestions)
+	return viper.WriteConfig()
 }
 
 func getConfigDir() string {
