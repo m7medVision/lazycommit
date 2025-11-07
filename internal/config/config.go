@@ -23,6 +23,7 @@ type ProviderConfig struct {
 type Config struct {
 	Providers      map[string]ProviderConfig `mapstructure:"providers"`
 	ActiveProvider string                    `mapstructure:"active_provider"`
+	Language       string                    `mapstructure:"language"`
 }
 
 var cfg *Config
@@ -45,6 +46,9 @@ func InitConfig() {
 	// Set defaults for anthropic provider
 	viper.SetDefault("providers.anthropic.model", "claude-haiku-4-5")
 	viper.SetDefault("providers.anthropic.num_suggestions", 10)
+
+	// Set default language
+	viper.SetDefault("language", "en")
 
 	viper.AutomaticEnv()
 
@@ -283,6 +287,25 @@ func SetNumSuggestions(provider, numSuggestions string) error {
 		InitConfig()
 	}
 	viper.Set(fmt.Sprintf("providers.%s.num_suggestions", provider), numSuggestions)
+	return viper.WriteConfig()
+}
+
+func GetLanguage() string {
+	if cfg == nil {
+		InitConfig()
+	}
+	if cfg.Language == "" {
+		return "en" // Default to English
+	}
+	return cfg.Language
+}
+
+func SetLanguage(language string) error {
+	if cfg == nil {
+		InitConfig()
+	}
+	cfg.Language = language
+	viper.Set("language", language)
 	return viper.WriteConfig()
 }
 

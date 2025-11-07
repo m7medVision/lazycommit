@@ -32,9 +32,11 @@ var getCmd = &cobra.Command{
 			fmt.Println("Error getting endpoint:", err)
 			os.Exit(1)
 		}
+		language := config.GetLanguage()
 		fmt.Printf("Active Provider: %s\n", provider)
 		fmt.Printf("Model: %s\n", model)
 		fmt.Printf("Endpoint: %s\n", endpoint)
+		fmt.Printf("Language: %s\n", language)
 	},
 }
 
@@ -97,6 +99,40 @@ func runInteractiveConfig() {
 		}
 		fmt.Printf("Provider set to: %s\n", selectedProvider)
 		currentModel = ""
+	}
+
+	// Language configuration
+	currentLanguage := config.GetLanguage()
+	languagePrompt := &survey.Select{
+		Message: "Choose a language for commit messages:",
+		Options: []string{"English (en)", "Español (es)"},
+		Default: func() string {
+			if currentLanguage == "es" {
+				return "Español (es)"
+			}
+			return "English (en)"
+		}(),
+	}
+	var selectedLanguage string
+	err = survey.AskOne(languagePrompt, &selectedLanguage)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	// Extract language code from selection
+	langCode := "en"
+	if selectedLanguage == "Español (es)" {
+		langCode = "es"
+	}
+
+	if langCode != currentLanguage {
+		err := config.SetLanguage(langCode)
+		if err != nil {
+			fmt.Printf("Error setting language: %v\n", err)
+			return
+		}
+		fmt.Printf("Language set to: %s\n", langCode)
 	}
 
 	// API key configuration - skip for copilot and anthropic
