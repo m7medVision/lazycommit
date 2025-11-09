@@ -5,6 +5,7 @@ AI-powered Git commit message generator that analyzes your staged changes and ou
 ## Features
 
 - Generates 10 commit message suggestions from your staged diff
+- Generates 10 pull request titles based on the diff between the current branch and a target branch
 - Providers: GitHub Copilot (default), OpenAI
 - Interactive config to pick provider/model and set keys
 - Simple output suitable for piping into TUI menus (one message per line)
@@ -28,6 +29,7 @@ go build -o lazycommit main.go
 - Root command: `lazycommit`
 - Subcommands:
   - `lazycommit commit` — prints 10 suggested commit messages to stdout, one per line, based on `git diff --cached`.
+  - `lazycommit pr <target-branch>` — prints 10 suggested pull request titles to stdout, one per line, based on diff between current branch and `<target-branch>`.
   - `lazycommit config get` — prints the active provider and model.
   - `lazycommit config set` — interactive setup for provider, API key, and model.
 
@@ -56,6 +58,12 @@ Pick interactively with `fzf`:
 ```bash
 git add .
 lazycommit commit | fzf --prompt='Pick commit> ' | xargs -r -I {} git commit -m "{}"
+```
+
+Generate PR titles against `main` branch:
+
+```bash
+lazycommit pr main
 ```
 
 ## Configuration
@@ -89,8 +97,9 @@ Contains prompt templates and message configurations. **Safe to share in dotfile
 This file is automatically created on first run with sensible defaults:
 
 ```yaml
-system_message: "You are a helpful assistant that generates git commit messages."
+system_message: "You are a helpful assistant that generates git commit messages, and pull request titles."
 commit_message_template: "Based on the following git diff, generate 10 conventional commit messages. Each message should be on a new line, without any numbering or bullet points:\n\n%s"
+pr_title_template: "Based on the following git diff, generate 10 pull request title suggestions. Each title should be on a new line, without any numbering or bullet points:\n\n%s"
 ```
 
 

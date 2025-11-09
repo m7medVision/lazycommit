@@ -11,6 +11,7 @@ import (
 type PromptConfig struct {
 	SystemMessage         string `yaml:"system_message"`
 	CommitMessageTemplate string `yaml:"commit_message_template"`
+	PRTitleTemplate       string `yaml:"pr_title_template"`
 }
 
 var promptsCfg *PromptConfig
@@ -60,8 +61,9 @@ func InitPromptConfig() {
 // getDefaultPromptConfig returns the default prompt configuration
 func getDefaultPromptConfig() *PromptConfig {
 	return &PromptConfig{
-		SystemMessage:         "You are a helpful assistant that generates git commit messages.",
+		SystemMessage:         "You are a helpful assistant that generates git commit messages, and pull request titles.",
 		CommitMessageTemplate: "Based on the following git diff, generate 10 conventional commit messages. Each message should be on a new line, without any numbering or bullet points:\n\n%s",
+		PRTitleTemplate:       "Based on the following git diff, generate 10 pull request title suggestions. Each title should be on a new line, without any numbering or bullet points:\n\n%s",
 	}
 }
 
@@ -105,4 +107,14 @@ func GetCommitMessagePromptFromConfig(diff string) string {
 	}
 	// Fallback to hardcoded default
 	return fmt.Sprintf("Based on the following git diff, generate 10 conventional commit messages. Each message should be on a new line, without any numbering or bullet points:\n\n%s", diff)
+}
+
+// GetPRTitlePromptFromConfig returns the pull request title prompt from configuration
+func GetPRTitlePromptFromConfig(diff string) string {
+	config := GetPromptConfig()
+	if config.PRTitleTemplate != "" {
+		return fmt.Sprintf(config.PRTitleTemplate, diff)
+	}
+	// Fallback to hardcoded default
+	return fmt.Sprintf("Based on the following git diff, generate 10 pull request title suggestions. Each title should be on a new line, without any numbering or bullet points:\n\n%s", diff)
 }
