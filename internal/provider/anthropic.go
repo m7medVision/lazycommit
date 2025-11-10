@@ -109,3 +109,84 @@ func (a *AnthropicProvider) GenerateCommitMessages(ctx context.Context, diff str
 
 	return commitMessages, nil
 }
+
+func (a *AnthropicProvider) GeneratePRTitle(ctx context.Context, diff string) (string, error) {
+	titles, err := a.GeneratePRTitles(ctx, diff)
+	if err != nil {
+		return "", err
+	}
+	if len(titles) == 0 {
+		return "", fmt.Errorf("no PR titles generated")
+	}
+	return titles[0], nil
+}
+
+func (a *AnthropicProvider) GeneratePRTitles(ctx context.Context, diff string) ([]string, error) {
+	if strings.TrimSpace(diff) == "" {
+		return nil, fmt.Errorf("no diff provided")
+	}
+
+	// Check if claude CLI is available
+	if _, err := exec.LookPath("claude"); err != nil {
+		return nil, fmt.Errorf("claude CLI not found in PATH. Please install Claude Code CLI: %w", err)
+	}
+
+	// Build the prompt using PR title template
+	systemMsg := GetSystemMessage()
+	userPrompt := GetPRTitlePrompt(diff)
+
+	// Modify the prompt to request specific number of suggestions
+	fullPrompt := fmt.Sprintf("%s\n\nUser request: %s\n\nIMPORTANT: Generate exactly %d pull request titles, one per line. Do not include any other text, explanations, or formatting - just the PR titles.",
+		systemMsg, userPrompt, a.numSuggestions)
+
+	// Execute claude CLI with the specified model
+	cmd := exec.CommandContext(ctx, "claude", "--model", a.model, "-p", fullPrompt)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("error executing claude CLI: %w\nOutput: %s", err, string(output))
+	}
+
+	// Parse the output - same logic as commit message generation
+	content := string(output)
+	lines := strings.Split(content, "\n")
+
+	var prTitles []string
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" {
+			continue
+		}
+		if len(trimmed) > 200 {
+			continue
+		}
+		// Skip markdown formatting or numbered lists
+		if strings.HasPrefix(trimmed, "#") || strings.HasPrefix(trimmed, "-") || strings.HasPrefix(trimmed, "*") {
+			parts := strings.SplitN(trimmed, " ", 2)
+			if len(parts) == 2 {
+				trimmed = strings.TrimSpace(parts[1])
+			}
+		}
+		// Remove numbered list formatting like "1. " or "1) "
+		if len(trimmed) > 3 {
+			if (trimmed[0] >= '0' && trimmed[0] <= '9') && (trimmed[1] == '.' || trimmed[1] == ')') {
+				trimmed = strings.TrimSpace(trimmed[2:])
+			}
+		}
+
+		if trimmed != "" {
+			prTitles = append(prTitles, trimmed)
+		}
+
+		// Stop once we have enough titles
+		if len(prTitles) >= a.numSuggestions {
+			break
+		}
+	}
+
+	if len(prTitles) == 0 {
+		return nil, fmt.Errorf("no valid PR titles generated from Claude output")
+	}
+
+	return prTitles, nil
+}

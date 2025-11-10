@@ -173,3 +173,73 @@ func (c *CopilotProvider) GenerateCommitMessages(ctx context.Context, diff strin
 	}
 	return out, nil
 }
+
+func (c *CopilotProvider) GeneratePRTitle(ctx context.Context, diff string) (string, error) {
+	titles, err := c.GeneratePRTitles(ctx, diff)
+	if err != nil {
+		return "", err
+	}
+	if len(titles) == 0 {
+		return "", fmt.Errorf("no PR titles generated")
+	}
+	return titles[0], nil
+}
+
+func (c *CopilotProvider) GeneratePRTitles(ctx context.Context, diff string) ([]string, error) {
+	if strings.TrimSpace(diff) == "" {
+		return nil, fmt.Errorf("no diff provided")
+	}
+	githubToken := c.getGitHubToken()
+	if githubToken == "" {
+		return nil, fmt.Errorf("GitHub token is required for Copilot provider")
+	}
+
+	var bearer string
+	var err error
+
+	// On Windows, use the token directly; on other platforms, exchange it for a Copilot token
+	if runtime.GOOS == "windows" {
+		bearer = githubToken
+	} else {
+		bearer, err = c.exchangeGitHubToken(ctx, githubToken)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	client := openai.NewClient(
+		option.WithBaseURL(c.endpoint),
+		option.WithAPIKey(bearer),
+		option.WithHeader("Editor-Version", "lazycommit/1.0"),
+		option.WithHeader("Editor-Plugin-Version", "lazycommit/1.0"),
+		option.WithHeader("Copilot-Integration-Id", "vscode-chat"),
+	)
+
+	params := openai.ChatCompletionNewParams{
+		Model: openai.ChatModel(c.model),
+		Messages: []openai.ChatCompletionMessageParamUnion{
+			{OfSystem: &openai.ChatCompletionSystemMessageParam{Content: openai.ChatCompletionSystemMessageParamContentUnion{OfString: openai.String(GetSystemMessage())}}},
+			{OfUser: &openai.ChatCompletionUserMessageParam{Content: openai.ChatCompletionUserMessageParamContentUnion{OfString: openai.String(GetPRTitlePrompt(diff))}}},
+		},
+	}
+
+	resp, err := client.Chat.Completions.New(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("error making request to Copilot: %w", err)
+	}
+	if len(resp.Choices) == 0 {
+		return nil, fmt.Errorf("no PR titles generated")
+	}
+	content := resp.Choices[0].Message.Content
+	parts := strings.Split(content, "\n")
+	var out []string
+	for _, p := range parts {
+		if s := strings.TrimSpace(p); s != "" {
+			out = append(out, s)
+		}
+	}
+	if len(out) == 0 {
+		return nil, fmt.Errorf("no valid PR titles generated")
+	}
+	return out, nil
+}

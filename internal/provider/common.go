@@ -47,3 +47,37 @@ func (c *commonProvider) generateCommitMessages(ctx context.Context, diff string
 	}
 	return cleanMessages, nil
 }
+
+// generatePRTitles is a helper function to generate pull request titles using the OpenAI API.
+func (c *commonProvider) generatePRTitles(ctx context.Context, diff string) ([]string, error) {
+	if diff == "" {
+		return nil, fmt.Errorf("no diff provided")
+	}
+
+	params := openai.ChatCompletionNewParams{
+		Model: openai.ChatModel(c.model),
+		Messages: []openai.ChatCompletionMessageParamUnion{
+			{OfSystem: &openai.ChatCompletionSystemMessageParam{Content: openai.ChatCompletionSystemMessageParamContentUnion{OfString: openai.String(GetSystemMessage())}}},
+			{OfUser: &openai.ChatCompletionUserMessageParam{Content: openai.ChatCompletionUserMessageParamContentUnion{OfString: openai.String(GetPRTitlePrompt(diff))}}},
+		},
+	}
+
+	resp, err := c.client.Chat.Completions.New(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("error making request to OpenAI compatible API: %w", err)
+	}
+
+	if len(resp.Choices) == 0 {
+		return nil, fmt.Errorf("no pr titles generated")
+	}
+
+	content := resp.Choices[0].Message.Content
+	messages := strings.Split(content, "\n")
+	var cleanMessages []string
+	for _, msg := range messages {
+		if strings.TrimSpace(msg) != "" {
+			cleanMessages = append(cleanMessages, strings.TrimSpace(msg))
+		}
+	}
+	return cleanMessages, nil
+}

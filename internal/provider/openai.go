@@ -48,3 +48,18 @@ func (o *OpenAIProvider) GenerateCommitMessage(ctx context.Context, diff string)
 func (o *OpenAIProvider) GenerateCommitMessages(ctx context.Context, diff string) ([]string, error) {
 	return o.generateCommitMessages(ctx, diff)
 }
+
+func (o *OpenAIProvider) GeneratePRTitle(ctx context.Context, diff string) (string, error) {
+	titles, err := o.generatePRTitles(ctx, diff)
+	if err != nil {
+		return "", err
+	}
+	if len(titles) == 0 {
+		return "", fmt.Errorf("no PR titles generated")
+	}
+	return titles[0], nil
+}
+
+func (o *OpenAIProvider) GeneratePRTitles(ctx context.Context, diff string) ([]string, error) {
+	return o.generatePRTitles(ctx, diff)
+}
