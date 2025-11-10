@@ -100,9 +100,21 @@ func GetSystemMessageFromConfig() string {
 // GetCommitMessagePromptFromConfig returns the commit message prompt from configuration
 func GetCommitMessagePromptFromConfig(diff string) string {
 	config := GetPromptConfig()
+	var basePrompt string
 	if config.CommitMessageTemplate != "" {
-		return fmt.Sprintf(config.CommitMessageTemplate, diff)
+		basePrompt = fmt.Sprintf(config.CommitMessageTemplate, diff)
+	} else {
+		// Fallback to hardcoded default
+		basePrompt = fmt.Sprintf("Based on the following git diff, generate 10 conventional commit messages. Each message should be on a new line, without any numbering or bullet points:\n\n%s", diff)
 	}
-	// Fallback to hardcoded default
-	return fmt.Sprintf("Based on the following git diff, generate 10 conventional commit messages. Each message should be on a new line, without any numbering or bullet points:\n\n%s", diff)
+
+	// Add language instruction based on configuration
+	language := GetLanguage()
+	if language == "es" {
+		basePrompt += "\n\nIMPORTANT: Generate all commit messages in Spanish."
+	} else if language == "en" {
+		basePrompt += "\n\nIMPORTANT: Generate all commit messages in English."
+	}
+
+	return basePrompt
 }

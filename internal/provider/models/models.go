@@ -23,7 +23,8 @@ type Model struct {
 }
 
 const (
-	ProviderOpenAI ModelProvider = "openai"
+	ProviderOpenAI    ModelProvider = "openai"
+	ProviderAnthropic ModelProvider = "anthropic"
 
 	GPT41        ModelID = "gpt-4.1"
 	GPT41Mini    ModelID = "gpt-4.1-mini"
@@ -37,6 +38,8 @@ const (
 	O3           ModelID = "o3"
 	O3Mini       ModelID = "o3-mini"
 	O4Mini       ModelID = "o4-mini"
+
+	ClaudeHaiku45 ModelID = "claude-haiku-4-5"
 )
 
 var OpenAIModels = map[ModelID]Model{
@@ -198,6 +201,22 @@ var OpenAIModels = map[ModelID]Model{
 		ContextWindow:       128_000,
 		DefaultMaxTokens:    50000,
 		CanReason:           true,
+		SupportsAttachments: true,
+	},
+}
+
+var AnthropicModels = map[ModelID]Model{
+	ClaudeHaiku45: {
+		ID:                  ClaudeHaiku45,
+		Name:                "Claude Haiku 4.5",
+		Provider:            ProviderAnthropic,
+		APIModel:            "claude-haiku-4-5",
+		CostPer1MIn:         0.80,
+		CostPer1MInCached:   0.08,
+		CostPer1MOut:        4.00,
+		CostPer1MOutCached:  0.40,
+		ContextWindow:       200_000,
+		DefaultMaxTokens:    8192,
 		SupportsAttachments: true,
 	},
 }
