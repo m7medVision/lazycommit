@@ -40,14 +40,20 @@ var commitCmd = &cobra.Command{
 		var aiProvider CommitProvider
 
 		providerName := config.GetProvider()
-		apiKey, err := config.GetAPIKey()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error getting API key: %v\n", err)
-			os.Exit(1)
+
+		// API key is not needed for anthropic provider (uses CLI)
+		var apiKey string
+		if providerName != "anthropic" {
+			var err error
+			apiKey, err = config.GetAPIKey()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error getting API key: %v\n", err)
+				os.Exit(1)
+			}
 		}
 
 		var model string
-		if providerName == "copilot" || providerName == "openai" {
+		if providerName == "copilot" || providerName == "openai" || providerName == "anthropic" {
 			var err error
 			model, err = config.GetModel()
 			if err != nil {
@@ -67,6 +73,13 @@ var commitCmd = &cobra.Command{
 			aiProvider = provider.NewCopilotProviderWithModel(apiKey, model, endpoint)
 		case "openai":
 			aiProvider = provider.NewOpenAIProvider(apiKey, model, endpoint)
+		case "anthropic":
+			// Get num_suggestions from config (default to 10)
+			numSuggestions := config.GetNumSuggestions()
+			if numSuggestions <= 0 {
+				numSuggestions = 10
+			}
+			aiProvider = provider.NewAnthropicProvider(model, numSuggestions)
 		default:
 			// Default to copilot if provider is not set or unknown
 			aiProvider = provider.NewCopilotProvider(apiKey, endpoint)

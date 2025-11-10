@@ -4,10 +4,11 @@ AI-powered Git commit message generator that analyzes your staged changes and ou
 
 ## Features
 
-- Generates 10 commit message suggestions from your staged diff
-- Generates 10 pull request titles based on the diff between the current branch and a target branch
-- Providers: GitHub Copilot (default), OpenAI
-- Interactive config to pick provider/model and set keys
+- Generates configurable number of commit message suggestions from your staged diff
+-  Generates 10 pull request titles based on the diff between the current branch and a target branch
+- Providers: GitHub Copilot (default), OpenAI, Anthropic (Claude Code CLI)
+- Multi-language support: English and Spanish
+- Interactive config to pick provider/model/language and set keys
 - Simple output suitable for piping into TUI menus (one message per line)
 
 ## Installation
@@ -30,8 +31,8 @@ go build -o lazycommit main.go
 - Subcommands:
   - `lazycommit commit` — prints 10 suggested commit messages to stdout, one per line, based on `git diff --cached`.
   - `lazycommit pr <target-branch>` — prints 10 suggested pull request titles to stdout, one per line, based on diff between current branch and `<target-branch>`.
-  - `lazycommit config get` — prints the active provider and model.
-  - `lazycommit config set` — interactive setup for provider, API key, and model.
+  - `lazycommit config get` — prints the active provider, model and language.
+  - `lazycommit config set` — interactive setup for provider, API key,  model, and language.
 
 Exit behaviors:
 - If no staged changes: prints "No staged changes to commit." and exits 0.
@@ -75,6 +76,7 @@ Contains API keys, tokens, and provider-specific settings. **Do not share this f
 
 ```yaml
 active_provider: copilot # default if a GitHub token is found
+language: en # commit message language: "en" (English) or "es" (Spanish)
 providers:
   copilot:
     api_key: "$GITHUB_TOKEN"   # Uses GitHub token; token is exchanged internally
@@ -84,12 +86,27 @@ providers:
     api_key: "$OPENAI_API_KEY"
     model: "gpt-4o"
     # endpoint_url: "https://api.openai.com/v1"  # Optional - uses default if not specified
+  anthropic:
+    model: "claude-haiku-4-5"  # Uses Claude Code CLI - no API key needed
+    num_suggestions: 10        # Number of commit suggestions to generate
   # Custom provider example (e.g., local Ollama):
   # local:
   #   api_key: "not-needed"
   #   model: "llama3.1:8b"
   #   endpoint_url: "http://localhost:11434/v1"
 ```
+
+#### Anthropic Provider (Claude Code CLI)
+
+The Anthropic provider integrates with your local [Claude Code CLI](https://github.com/anthropics/claude-code) installation:
+
+- **No API key required**: Uses your existing Claude Code authentication
+- **Fast and cost-effective**: Leverages Claude Haiku model
+- **Configurable**: Set custom number of suggestions per provider
+
+Requirements:
+- Claude Code CLI installed and authenticated
+- Command `claude` available in PATH
 
 ### 2. Prompt Configuration (`~/.config/.lazycommit.prompts.yaml`)
 Contains prompt templates and message configurations. **Safe to share in dotfiles and Git.**
@@ -133,6 +150,28 @@ providers:
 <!--     model: "glm-4.6" -->
 <!--     endpoint_url: "https://api.z.ai/api/paas/v4/" -->
 <!-- ``` -->
+
+### Language Configuration
+
+lazycommit supports generating commit messages in different languages. Set the `language` field in your config:
+
+```yaml
+language: es  # Spanish
+# or
+language: en  # English (default)
+```
+
+You can also configure it interactively:
+
+```bash
+lazycommit config set  # Select language in the interactive menu
+```
+
+The language setting automatically instructs the AI to generate commit messages in the specified language, regardless of the provider used.
+
+**Supported languages:**
+- `en` - English (default)
+- `es` - Spanish (Español)
 
 ## Integration with TUI Git clients
 
