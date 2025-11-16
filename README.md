@@ -223,6 +223,35 @@ This config will allows you to edit the commit message after picking from lazyco
 ```
 
 
+
+### Commitizen
+
+First, install the Commitizen plugin:
+
+```bash
+pip install cz-lazycommit
+# or if you are using Arch Linux:
+uv tool install commitizen --with cz-lazycommit
+```
+
+Then use the plugin with the following command:
+
+```bash
+git cz --name cz_lazycommit commit
+```
+
+If you are using Commitizen with Lazygit, you can add this custom command:
+
+```yaml
+  - key: "C"
+    command: "git cz --name cz_lazycommit commit"
+    description: "Commit with Commitizen"
+    context: "files"
+    loadingText: "Opening Commitizen commit tool"
+    output: terminal
+```
+
+
 ## Troubleshooting
 
 - "No staged changes to commit." — run `git add` first.
