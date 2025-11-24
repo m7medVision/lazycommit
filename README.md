@@ -2,6 +2,11 @@
 
 AI-powered Git commit message generator that analyzes your staged changes and outputs conventional commit messages.
 
+<video src="https://github-production-user-asset-6210df.s3.amazonaws.com/88824957/518189972-f9819b7b-f33b-4544-9d65-ffee2b7c4244.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20251124%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251124T154151Z&X-Amz-Expires=300&X-Amz-Signature=9ad6523cf92ecbe4fad3b218333c036f3a9a56c88bb630a4d53239c4b20ffa78&X-Amz-SignedHeaders=host" controls title="demo">
+    Your browser does not support the video tag.
+</video>
+
+
 ## Features
 
 - Generates configurable number of commit message suggestions from your staged diff
