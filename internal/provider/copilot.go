@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"runtime"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/m7medvision/lazycommit/internal/config"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 )
@@ -19,6 +20,25 @@ type CopilotProvider struct {
 	model      string
 	endpoint   string
 	httpClient *http.Client
+
+	clientMu     sync.RWMutex
+	openaiClient *openai.Client
+	clientToken  string
+}
+
+func newOptimizedHTTPClient() *http.Client {
+	transport := &http.Transport{
+		MaxIdleConns:        10,
+		MaxIdleConnsPerHost: 5,
+		IdleConnTimeout:     90 * time.Second,
+		DisableCompression:  false,
+		DisableKeepAlives:   false,
+	}
+
+	return &http.Client{
+		Timeout:   30 * time.Second,
+		Transport: transport,
+	}
 }
 
 func NewCopilotProvider(token, endpoint string) *CopilotProvider {
@@ -29,7 +49,7 @@ func NewCopilotProvider(token, endpoint string) *CopilotProvider {
 		apiKey:     token,
 		model:      "gpt-4o",
 		endpoint:   endpoint,
-		httpClient: &http.Client{Timeout: 30 * time.Second},
+		httpClient: newOptimizedHTTPClient(),
 	}
 }
 
@@ -42,7 +62,7 @@ func NewCopilotProviderWithModel(token, model, endpoint string) *CopilotProvider
 		apiKey:     token,
 		model:      m,
 		endpoint:   endpoint,
-		httpClient: &http.Client{Timeout: 30 * time.Second},
+		httpClient: newOptimizedHTTPClient(),
 	}
 }
 
@@ -50,6 +70,9 @@ func normalizeCopilotModel(model string) string {
 	m := strings.TrimSpace(model)
 	if m == "" {
 		return "gpt-4o"
+	}
+	if strings.EqualFold(m, "auto") {
+		return ""
 	}
 	if strings.Contains(m, "/") {
 		parts := strings.SplitN(m, "/", 2)
@@ -73,6 +96,7 @@ func (c *CopilotProvider) exchangeGitHubToken(ctx context.Context, githubToken s
 		return "", fmt.Errorf("failed exchanging token: %w", err)
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		var body struct {
 			Message string `json:"message"`
@@ -80,6 +104,7 @@ func (c *CopilotProvider) exchangeGitHubToken(ctx context.Context, githubToken s
 		_ = json.NewDecoder(resp.Body).Decode(&body)
 		return "", fmt.Errorf("token exchange failed: %d %s", resp.StatusCode, body.Message)
 	}
+
 	var tr struct {
 		Token     string `json:"token"`
 		ExpiresAt int64  `json:"expires_at"`
@@ -90,6 +115,11 @@ func (c *CopilotProvider) exchangeGitHubToken(ctx context.Context, githubToken s
 	if tr.Token == "" {
 		return "", fmt.Errorf("empty copilot bearer token")
 	}
+
+	if err := config.SaveCopilotTokenCache(tr.Token, tr.ExpiresAt, githubToken); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: failed to cache token: %v\n", err)
+	}
+
 	return tr.Token, nil
 }
 
@@ -101,6 +131,76 @@ func (c *CopilotProvider) getGitHubToken() string {
 		return t
 	}
 	return ""
+}
+
+func (c *CopilotProvider) getBearerToken(ctx context.Context) (string, error) {
+	githubToken := c.getGitHubToken()
+	if githubToken == "" {
+		return "", fmt.Errorf("GitHub token is required for Copilot provider")
+	}
+
+	if cached := config.GetCachedCopilotToken(githubToken); cached != nil {
+		return cached.Token, nil
+	}
+
+	return c.exchangeGitHubToken(ctx, githubToken)
+}
+
+func (c *CopilotProvider) getOrCreateClient(ctx context.Context) (*openai.Client, error) {
+	bearer, err := c.getBearerToken(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	c.clientMu.Lock()
+	defer c.clientMu.Unlock()
+
+	if c.openaiClient == nil || c.clientToken != bearer {
+		client := openai.NewClient(
+			option.WithBaseURL(c.endpoint),
+			option.WithAPIKey(bearer),
+			option.WithHeader("Editor-Version", "lazycommit/1.0"),
+			option.WithHeader("Editor-Plugin-Version", "lazycommit/1.0"),
+			option.WithHeader("Copilot-Integration-Id", "vscode-chat"),
+		)
+		c.openaiClient = &client
+		c.clientToken = bearer
+	}
+
+	return c.openaiClient, nil
+}
+
+func (c *CopilotProvider) invalidateAndRetry(ctx context.Context) (*openai.Client, error) {
+	config.InvalidateCopilotTokenCache()
+
+	c.clientMu.Lock()
+	c.openaiClient = nil
+	c.clientToken = ""
+	c.clientMu.Unlock()
+
+	return c.getOrCreateClient(ctx)
+}
+
+func isAuthError(err error) bool {
+	if err == nil {
+		return false
+	}
+	errStr := err.Error()
+	return strings.Contains(errStr, "401") ||
+		strings.Contains(errStr, "403") ||
+		strings.Contains(errStr, "unauthorized") ||
+		strings.Contains(errStr, "Unauthorized")
+}
+
+func parseResponseLines(content string) []string {
+	parts := strings.Split(content, "\n")
+	var out []string
+	for _, p := range parts {
+		if s := strings.TrimSpace(p); s != "" {
+			out = append(out, s)
+		}
+	}
+	return out
 }
 
 func (c *CopilotProvider) GenerateCommitMessage(ctx context.Context, diff string) (string, error) {
@@ -118,60 +218,48 @@ func (c *CopilotProvider) GenerateCommitMessages(ctx context.Context, diff strin
 	if strings.TrimSpace(diff) == "" {
 		return nil, fmt.Errorf("no diff provided")
 	}
-	githubToken := c.getGitHubToken()
-	if githubToken == "" {
-		return nil, fmt.Errorf("GitHub token is required for Copilot provider")
+
+	client, err := c.getOrCreateClient(ctx)
+	if err != nil {
+		return nil, err
 	}
-
-	var bearer string
-	var err error
-
-	// On Windows, use the token directly; on other platforms, exchange it for a Copilot token
-	if runtime.GOOS == "windows" {
-		bearer = githubToken
-	} else {
-		bearer, err = c.exchangeGitHubToken(ctx, githubToken)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-
-	client := openai.NewClient(
-		option.WithBaseURL(c.endpoint),
-		option.WithAPIKey(bearer),
-		option.WithHeader("Editor-Version", "lazycommit/1.0"),
-		option.WithHeader("Editor-Plugin-Version", "lazycommit/1.0"),
-		option.WithHeader("Copilot-Integration-Id", "vscode-chat"),
-	)
 
 	params := openai.ChatCompletionNewParams{
-		Model: openai.ChatModel(c.model),
 		Messages: []openai.ChatCompletionMessageParamUnion{
 			{OfSystem: &openai.ChatCompletionSystemMessageParam{Content: openai.ChatCompletionSystemMessageParamContentUnion{OfString: openai.String(GetSystemMessage())}}},
 			{OfUser: &openai.ChatCompletionUserMessageParam{Content: openai.ChatCompletionUserMessageParamContentUnion{OfString: openai.String(GetCommitMessagePrompt(diff))}}},
 		},
 	}
+	if c.model != "" {
+		params.Model = openai.ChatModel(c.model)
+	}
 
 	resp, err := client.Chat.Completions.New(ctx, params)
 	if err != nil {
-		return nil, fmt.Errorf("error making request to Copilot: %w", err)
+		if isAuthError(err) {
+			client, err = c.invalidateAndRetry(ctx)
+			if err != nil {
+				return nil, err
+			}
+			resp, err = client.Chat.Completions.New(ctx, params)
+			if err != nil {
+				return nil, fmt.Errorf("error making request to Copilot (after retry): %w", err)
+			}
+		} else {
+			return nil, fmt.Errorf("error making request to Copilot: %w", err)
+		}
 	}
+
 	if len(resp.Choices) == 0 {
 		return nil, fmt.Errorf("no commit messages generated")
 	}
+
 	content := resp.Choices[0].Message.Content
-	parts := strings.Split(content, "\n")
-	var out []string
-	for _, p := range parts {
-		if s := strings.TrimSpace(p); s != "" {
-			out = append(out, s)
-		}
-	}
-	if len(out) == 0 {
+	result := parseResponseLines(content)
+	if len(result) == 0 {
 		return nil, fmt.Errorf("no valid commit messages generated")
 	}
-	return out, nil
+	return result, nil
 }
 
 func (c *CopilotProvider) GeneratePRTitle(ctx context.Context, diff string) (string, error) {
@@ -189,57 +277,46 @@ func (c *CopilotProvider) GeneratePRTitles(ctx context.Context, diff string) ([]
 	if strings.TrimSpace(diff) == "" {
 		return nil, fmt.Errorf("no diff provided")
 	}
-	githubToken := c.getGitHubToken()
-	if githubToken == "" {
-		return nil, fmt.Errorf("GitHub token is required for Copilot provider")
+
+	client, err := c.getOrCreateClient(ctx)
+	if err != nil {
+		return nil, err
 	}
-
-	var bearer string
-	var err error
-
-	// On Windows, use the token directly; on other platforms, exchange it for a Copilot token
-	if runtime.GOOS == "windows" {
-		bearer = githubToken
-	} else {
-		bearer, err = c.exchangeGitHubToken(ctx, githubToken)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	client := openai.NewClient(
-		option.WithBaseURL(c.endpoint),
-		option.WithAPIKey(bearer),
-		option.WithHeader("Editor-Version", "lazycommit/1.0"),
-		option.WithHeader("Editor-Plugin-Version", "lazycommit/1.0"),
-		option.WithHeader("Copilot-Integration-Id", "vscode-chat"),
-	)
 
 	params := openai.ChatCompletionNewParams{
-		Model: openai.ChatModel(c.model),
 		Messages: []openai.ChatCompletionMessageParamUnion{
 			{OfSystem: &openai.ChatCompletionSystemMessageParam{Content: openai.ChatCompletionSystemMessageParamContentUnion{OfString: openai.String(GetSystemMessage())}}},
 			{OfUser: &openai.ChatCompletionUserMessageParam{Content: openai.ChatCompletionUserMessageParamContentUnion{OfString: openai.String(GetPRTitlePrompt(diff))}}},
 		},
 	}
+	if c.model != "" {
+		params.Model = openai.ChatModel(c.model)
+	}
 
 	resp, err := client.Chat.Completions.New(ctx, params)
 	if err != nil {
-		return nil, fmt.Errorf("error making request to Copilot: %w", err)
+		if isAuthError(err) {
+			client, err = c.invalidateAndRetry(ctx)
+			if err != nil {
+				return nil, err
+			}
+			resp, err = client.Chat.Completions.New(ctx, params)
+			if err != nil {
+				return nil, fmt.Errorf("error making request to Copilot (after retry): %w", err)
+			}
+		} else {
+			return nil, fmt.Errorf("error making request to Copilot: %w", err)
+		}
 	}
+
 	if len(resp.Choices) == 0 {
 		return nil, fmt.Errorf("no PR titles generated")
 	}
+
 	content := resp.Choices[0].Message.Content
-	parts := strings.Split(content, "\n")
-	var out []string
-	for _, p := range parts {
-		if s := strings.TrimSpace(p); s != "" {
-			out = append(out, s)
-		}
-	}
-	if len(out) == 0 {
+	result := parseResponseLines(content)
+	if len(result) == 0 {
 		return nil, fmt.Errorf("no valid PR titles generated")
 	}
-	return out, nil
+	return result, nil
 }

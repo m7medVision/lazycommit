@@ -158,22 +158,39 @@ func runInteractiveConfig() {
 		fmt.Println("Anthropic provider uses Claude Code CLI - no API key needed.")
 	}
 
-	// Dynamically generate available models
 	availableModels := map[string][]string{
 		"openai":    {},
-		"copilot":   {"openai/gpt-5-mini"},
+		"copilot":   {},
 		"anthropic": {},
 	}
 
 	modelDisplayToID := map[string]string{}
 
-	if selectedProvider == "openai" {
+	switch selectedProvider {
+	case "copilot":
+		copilotModels := []struct {
+			Display string
+			ID      string
+		}{
+
+			{Display: "Auto", ID: "auto"},
+			{Display: "GPT-4.1", ID: "gpt-4.1"},
+			{Display: "GPT-4o", ID: "gpt-4o"},
+			{Display: "GPT-5 mini", ID: "gpt-5-mini"},
+			{Display: "Grok Code Fast 1", ID: "grok-code-fast-1"},
+			{Display: "Raptor mini (Preview)", ID: "raptor-mini"},
+		}
+		for _, m := range copilotModels {
+			availableModels["copilot"] = append(availableModels["copilot"], m.Display)
+			modelDisplayToID[m.Display] = m.ID
+		}
+	case "openai":
 		for id, m := range models.OpenAIModels {
 			display := fmt.Sprintf("%s (%s)", m.Name, string(id))
 			availableModels["openai"] = append(availableModels["openai"], display)
 			modelDisplayToID[display] = string(id)
 		}
-	} else if selectedProvider == "anthropic" {
+	case "anthropic":
 		for _, m := range models.AnthropicModels {
 			display := fmt.Sprintf("%s (%s)", m.Name, m.APIModel)
 			availableModels["anthropic"] = append(availableModels["anthropic"], display)
@@ -189,7 +206,7 @@ func runInteractiveConfig() {
 	// Try to set the default to the current model if possible
 	isValidDefault := false
 	currentDisplay := ""
-	if selectedProvider == "openai" || selectedProvider == "anthropic" {
+	if selectedProvider == "openai" || selectedProvider == "anthropic" || selectedProvider == "copilot" {
 		for display, id := range modelDisplayToID {
 			if id == currentModel || display == currentModel {
 				isValidDefault = true
@@ -218,7 +235,7 @@ func runInteractiveConfig() {
 	}
 
 	selectedModel := selectedDisplay
-	if selectedProvider == "openai" || selectedProvider == "anthropic" {
+	if selectedProvider == "openai" || selectedProvider == "anthropic" || selectedProvider == "copilot" {
 		selectedModel = modelDisplayToID[selectedDisplay]
 	}
 
