@@ -71,6 +71,9 @@ func normalizeCopilotModel(model string) string {
 	if m == "" {
 		return "gpt-4o"
 	}
+	if strings.EqualFold(m, "auto") {
+		return ""
+	}
 	if strings.Contains(m, "/") {
 		parts := strings.SplitN(m, "/", 2)
 		if len(parts) == 2 && parts[1] != "" {
@@ -222,11 +225,13 @@ func (c *CopilotProvider) GenerateCommitMessages(ctx context.Context, diff strin
 	}
 
 	params := openai.ChatCompletionNewParams{
-		Model: openai.ChatModel(c.model),
 		Messages: []openai.ChatCompletionMessageParamUnion{
 			{OfSystem: &openai.ChatCompletionSystemMessageParam{Content: openai.ChatCompletionSystemMessageParamContentUnion{OfString: openai.String(GetSystemMessage())}}},
 			{OfUser: &openai.ChatCompletionUserMessageParam{Content: openai.ChatCompletionUserMessageParamContentUnion{OfString: openai.String(GetCommitMessagePrompt(diff))}}},
 		},
+	}
+	if c.model != "" {
+		params.Model = openai.ChatModel(c.model)
 	}
 
 	resp, err := client.Chat.Completions.New(ctx, params)
@@ -279,11 +284,13 @@ func (c *CopilotProvider) GeneratePRTitles(ctx context.Context, diff string) ([]
 	}
 
 	params := openai.ChatCompletionNewParams{
-		Model: openai.ChatModel(c.model),
 		Messages: []openai.ChatCompletionMessageParamUnion{
 			{OfSystem: &openai.ChatCompletionSystemMessageParam{Content: openai.ChatCompletionSystemMessageParamContentUnion{OfString: openai.String(GetSystemMessage())}}},
 			{OfUser: &openai.ChatCompletionUserMessageParam{Content: openai.ChatCompletionUserMessageParamContentUnion{OfString: openai.String(GetPRTitlePrompt(diff))}}},
 		},
+	}
+	if c.model != "" {
+		params.Model = openai.ChatModel(c.model)
 	}
 
 	resp, err := client.Chat.Completions.New(ctx, params)
