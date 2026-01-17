@@ -56,12 +56,36 @@ func (a *AnthropicProvider) GenerateCommitMessages(ctx context.Context, diff str
 
 	// Execute claude CLI with haiku model
 	// Using -p flag for print mode and --model for model selection
-	cmd := exec.CommandContext(ctx, "claude", "--model", a.model, "-p", fullPrompt)
+	// Pipe prompt via stdin to avoid Windows command line length limits (8191 chars)
+	cmd := exec.CommandContext(ctx, "claude", "--model", a.model, "-p", "-")
 
-	output, err := cmd.CombinedOutput()
+	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		return nil, fmt.Errorf("error executing claude CLI: %w\nOutput: %s", err, string(output))
+		return nil, fmt.Errorf("error creating stdin pipe: %w", err)
 	}
+
+	var outputBuf strings.Builder
+	cmd.Stdout = &outputBuf
+	cmd.Stderr = &outputBuf
+
+	if err := cmd.Start(); err != nil {
+		return nil, fmt.Errorf("error starting claude CLI: %w", err)
+	}
+
+	_, writeErr := stdin.Write([]byte(fullPrompt))
+	stdin.Close()
+
+	waitErr := cmd.Wait()
+
+	if writeErr != nil {
+		return nil, fmt.Errorf("error writing to claude CLI stdin: %w", writeErr)
+	}
+
+	if waitErr != nil {
+		return nil, fmt.Errorf("error executing claude CLI: %w\nOutput: %s", waitErr, outputBuf.String())
+	}
+
+	output := []byte(outputBuf.String())
 
 	// Parse the output - split by newlines and clean
 	content := string(output)
@@ -139,13 +163,36 @@ func (a *AnthropicProvider) GeneratePRTitles(ctx context.Context, diff string) (
 	fullPrompt := fmt.Sprintf("%s\n\nUser request: %s\n\nIMPORTANT: Generate exactly %d pull request titles, one per line. Do not include any other text, explanations, or formatting - just the PR titles.",
 		systemMsg, userPrompt, a.numSuggestions)
 
-	// Execute claude CLI with the specified model
-	cmd := exec.CommandContext(ctx, "claude", "--model", a.model, "-p", fullPrompt)
+	// Pipe prompt via stdin to avoid Windows command line length limits (8191 chars)
+	cmd := exec.CommandContext(ctx, "claude", "--model", a.model, "-p", "-")
 
-	output, err := cmd.CombinedOutput()
+	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		return nil, fmt.Errorf("error executing claude CLI: %w\nOutput: %s", err, string(output))
+		return nil, fmt.Errorf("error creating stdin pipe: %w", err)
 	}
+
+	var outputBuf strings.Builder
+	cmd.Stdout = &outputBuf
+	cmd.Stderr = &outputBuf
+
+	if err := cmd.Start(); err != nil {
+		return nil, fmt.Errorf("error starting claude CLI: %w", err)
+	}
+
+	_, writeErr := stdin.Write([]byte(fullPrompt))
+	stdin.Close()
+
+	waitErr := cmd.Wait()
+
+	if writeErr != nil {
+		return nil, fmt.Errorf("error writing to claude CLI stdin: %w", writeErr)
+	}
+
+	if waitErr != nil {
+		return nil, fmt.Errorf("error executing claude CLI: %w\nOutput: %s", waitErr, outputBuf.String())
+	}
+
+	output := []byte(outputBuf.String())
 
 	// Parse the output - same logic as commit message generation
 	content := string(output)
