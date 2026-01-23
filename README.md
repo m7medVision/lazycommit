@@ -12,7 +12,7 @@ AI-powered Git commit message generator that analyzes your staged changes and ou
 - Generates configurable number of commit message suggestions from your staged diff
 -  Generates 10 pull request titles based on the diff between the current branch and a target branch
 - Providers: GitHub Copilot (default), OpenAI, Anthropic (Claude Code CLI)
-- Multi-language support: English and Spanish
+- Multi-language support: Any language (English, Arabic, Korean, etc.)
 - Interactive config to pick provider/model/language and set keys
 - Simple output suitable for piping into TUI menus (one message per line)
 
@@ -81,7 +81,6 @@ Contains API keys, tokens, and provider-specific settings. **Do not share this f
 
 ```yaml
 active_provider: copilot # default if a GitHub token is found
-language: en # commit message language: "en" (English) or "es" (Spanish)
 providers:
   copilot:
     api_key: "$GITHUB_TOKEN"   # Uses GitHub token; token is exchanged internally
@@ -94,35 +93,30 @@ providers:
   anthropic:
     model: "claude-haiku-4-5"  # Uses Claude Code CLI - no API key needed
     num_suggestions: 10        # Number of commit suggestions to generate
-  # Custom provider example (e.g., local Ollama):
-  # local:
-  #   api_key: "not-needed"
-  #   model: "llama3.1:8b"
-  #   endpoint_url: "http://localhost:11434/v1"
 ```
 
-#### Anthropic Provider (Claude Code CLI)
-
-The Anthropic provider integrates with your local [Claude Code CLI](https://github.com/anthropics/claude-code) installation:
-
-- **No API key required**: Uses your existing Claude Code authentication
-- **Fast and cost-effective**: Leverages Claude Haiku model
-- **Configurable**: Set custom number of suggestions per provider
-
-Requirements:
-- Claude Code CLI installed and authenticated
-- Command `claude` available in PATH
+> [!NOTE]
+> `.lazycommit.yaml: language` is deprecated and will be removed in a future release. Use `.lazycommit.prompts.yaml` instead.
 
 ### 2. Prompt Configuration (`~/.config/.lazycommit.prompts.yaml`)
 Contains prompt templates and message configurations. **Safe to share in dotfiles and Git.**
+
+```yaml
+language: English # commit message language (e.g., "English", "Arabic", "Korean")
+system_message: "You are a helpful assistant that generates git commit messages, and pull request titles."
+commit_message_template: "Based on the following git diff, generate 10 conventional commit messages. Each message should be on a new line, without any numbering or bullet points:\n\n%s"
+pr_title_template: "Based on the following git diff, generate 10 pull request title suggestions. Each title should be on a new line, without any numbering or bullet points:\n\n%s"
+```
 
 ### Per-Repository Configuration
 
 You can override the prompt configuration on a per-repository basis by creating a `.lazycommit.prompts.yaml` file in the root of your git repository. This is useful for projects that require different languages or commit message formats.
 
+If a field is missing in your repository-local configuration, the value from the global configuration will be used.
+
 Example `.lazycommit.prompts.yaml` for a Korean project:
 ```yaml
-language: ko
+language: Korean
 commit_message_template: "Based on the following git diff, generate 5 conventional commit messages in Korean:\n\n%s"
 ```
 
@@ -170,12 +164,14 @@ providers:
 
 ### Language Configuration
 
-lazycommit supports generating commit messages in different languages. Set the `language` field in your config:
+lazycommit supports generating commit messages in any language. Set the `language` field in your prompt config (`.lazycommit.prompts.yaml`):
 
 ```yaml
-language: es  # Spanish
+language: Spanish
 # or
-language: en  # English (default)
+language: Arabic
+# or
+language: English  # (default)
 ```
 
 You can also configure it interactively:
@@ -185,10 +181,6 @@ lazycommit config set  # Select language in the interactive menu
 ```
 
 The language setting automatically instructs the AI to generate commit messages in the specified language, regardless of the provider used.
-
-**Supported languages:**
-- `en` - English (default)
-- `es` - Spanish (Español)
 
 ## Integration with TUI Git clients
 
