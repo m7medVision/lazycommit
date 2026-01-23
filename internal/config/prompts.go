@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/m7medvision/lazycommit/internal/git"
+	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
 )
 
@@ -18,64 +19,79 @@ type PromptConfig struct {
 
 var promptsCfg *PromptConfig
 
-// InitPromptConfig initializes the prompt configuration
 func InitPromptConfig() {
 	if promptsCfg != nil {
 		return
 	}
 
-	promptsFile := filepath.Join(getConfigDir(), ".lazycommit.prompts.yaml")
+	globalPromptsFile := filepath.Join(getConfigDir(), ".lazycommit.prompts.yaml")
+	globalPrompts := loadPromptConfigFromFile(globalPromptsFile)
+
+	if globalPrompts.Language == "" {
+		legacyLanguage := viper.GetString("language")
+		if legacyLanguage != "" {
+			globalPrompts.Language = legacyLanguage
+			_ = savePromptConfig(globalPromptsFile, globalPrompts)
+		}
+	}
+
+	effectivePrompts := globalPrompts
 
 	if repoRoot, err := git.GetRepoRoot(); err == nil {
 		localPromptsFile := filepath.Join(repoRoot, ".lazycommit.prompts.yaml")
 		if _, err := os.Stat(localPromptsFile); err == nil {
-			promptsFile = localPromptsFile
+			localPrompts := loadPromptConfigFromFile(localPromptsFile)
+			effectivePrompts = mergePromptConfigs(globalPrompts, localPrompts)
 		}
 	}
 
-	if _, err := os.Stat(promptsFile); os.IsNotExist(err) {
-		// Create default prompts file
-		defaultConfig := getDefaultPromptConfig()
-		if err := savePromptConfig(promptsFile, defaultConfig); err != nil {
-			fmt.Printf("Error creating default prompts file: %v\n", err)
-			fmt.Printf("Using default prompts\n")
-		} else {
-			fmt.Printf("Created default prompts config at %s\n", promptsFile)
-		}
-		promptsCfg = defaultConfig
-		return
+	promptsCfg = effectivePrompts
+}
+
+func loadPromptConfigFromFile(path string) *PromptConfig {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return getDefaultPromptConfig()
 	}
 
-	// Load existing prompts file
-	data, err := os.ReadFile(promptsFile)
+	data, err := os.ReadFile(path)
 	if err != nil {
-		fmt.Printf("Error reading prompts file: %v\n", err)
-		fmt.Printf("Using default prompts\n")
-		promptsCfg = getDefaultPromptConfig()
-		return
+		return getDefaultPromptConfig()
 	}
 
 	var config PromptConfig
 	if err := yaml.Unmarshal(data, &config); err != nil {
-		fmt.Printf("Error parsing prompts file: %v\n", err)
-		fmt.Printf("Using default prompts\n")
-		promptsCfg = getDefaultPromptConfig()
-		return
+		return getDefaultPromptConfig()
 	}
 
-	promptsCfg = &config
+	return &config
 }
 
-// getDefaultPromptConfig returns the default prompt configuration
+func mergePromptConfigs(global, local *PromptConfig) *PromptConfig {
+	merged := *global
+	if local.SystemMessage != "" {
+		merged.SystemMessage = local.SystemMessage
+	}
+	if local.CommitMessageTemplate != "" {
+		merged.CommitMessageTemplate = local.CommitMessageTemplate
+	}
+	if local.PRTitleTemplate != "" {
+		merged.PRTitleTemplate = local.PRTitleTemplate
+	}
+	if local.Language != "" {
+		merged.Language = local.Language
+	}
+	return &merged
+}
+
 func getDefaultPromptConfig() *PromptConfig {
 	return &PromptConfig{
 		SystemMessage:         "You are a helpful assistant that generates git commit messages, and pull request titles.",
 		CommitMessageTemplate: "Based on the following git diff, generate 10 conventional commit messages. Each message should be on a new line, without any numbering or bullet points:\n\n%s",
 		PRTitleTemplate:       "Based on the following git diff, generate 10 pull request title suggestions. Each title should be on a new line, without any numbering or bullet points:\n\n%s",
+		Language:              "English",
 	}
 }
 
-// savePromptConfig saves the prompt configuration to a file
 func savePromptConfig(filename string, config *PromptConfig) error {
 	data, err := yaml.Marshal(config)
 	if err != nil {
@@ -89,7 +105,6 @@ func savePromptConfig(filename string, config *PromptConfig) error {
 	return nil
 }
 
-// GetPromptConfig returns the current prompt configuration
 func GetPromptConfig() *PromptConfig {
 	if promptsCfg == nil {
 		InitPromptConfig()
@@ -97,48 +112,66 @@ func GetPromptConfig() *PromptConfig {
 	return promptsCfg
 }
 
-// GetSystemMessageFromConfig returns the system message from configuration
 func GetSystemMessageFromConfig() string {
 	config := GetPromptConfig()
 	if config.SystemMessage != "" {
 		return config.SystemMessage
 	}
-	// Fallback to hardcoded default
 	return "You are a helpful assistant that generates git commit messages."
 }
 
-// GetCommitMessagePromptFromConfig returns the commit message prompt from configuration
+func getLanguageInstruction(language string) string {
+	if language == "" {
+		return ""
+	}
+
+	return fmt.Sprintf("\n\nIMPORTANT: Generate all content in %s.", language)
+}
+
 func GetCommitMessagePromptFromConfig(diff string) string {
 	config := GetPromptConfig()
 	var basePrompt string
 	if config.CommitMessageTemplate != "" {
 		basePrompt = fmt.Sprintf(config.CommitMessageTemplate, diff)
 	} else {
-		// Fallback to hardcoded default
 		basePrompt = fmt.Sprintf("Based on the following git diff, generate 10 conventional commit messages. Each message should be on a new line, without any numbering or bullet points:\n\n%s", diff)
 	}
 
-	// Add language instruction based on configuration
-	language := config.Language
-	if language == "" {
-		language = GetLanguage()
-	}
-
-	if language == "es" {
-		basePrompt += "\n\nIMPORTANT: Generate all commit messages in Spanish."
-	} else if language == "en" {
-		basePrompt += "\n\nIMPORTANT: Generate all commit messages in English."
-	}
+	basePrompt += getLanguageInstruction(config.Language)
 
 	return basePrompt
 }
 
-// GetPRTitlePromptFromConfig returns the pull request title prompt from configuration
 func GetPRTitlePromptFromConfig(diff string) string {
 	config := GetPromptConfig()
+	var basePrompt string
 	if config.PRTitleTemplate != "" {
-		return fmt.Sprintf(config.PRTitleTemplate, diff)
+		basePrompt = fmt.Sprintf(config.PRTitleTemplate, diff)
+	} else {
+		basePrompt = fmt.Sprintf("Based on the following git diff, generate 10 pull request title suggestions. Each title should be on a new line, without any numbering or bullet points:\n\n%s", diff)
 	}
-	// Fallback to hardcoded default
-	return fmt.Sprintf("Based on the following git diff, generate 10 pull request title suggestions. Each title should be on a new line, without any numbering or bullet points:\n\n%s", diff)
+
+	basePrompt += getLanguageInstruction(config.Language)
+
+	return basePrompt
+}
+
+func SetLanguage(language string) error {
+	globalPromptsFile := filepath.Join(getConfigDir(), ".lazycommit.prompts.yaml")
+	globalPrompts := loadPromptConfigFromFile(globalPromptsFile)
+	globalPrompts.Language = language
+	err := savePromptConfig(globalPromptsFile, globalPrompts)
+	if err != nil {
+		return err
+	}
+
+	if promptsCfg != nil {
+		promptsCfg.Language = language
+	}
+
+	return nil
+}
+
+func GetLanguage() string {
+	return GetPromptConfig().Language
 }
