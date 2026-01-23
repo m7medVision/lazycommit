@@ -103,14 +103,19 @@ func runInteractiveConfig() {
 
 	// Language configuration
 	currentLanguage := config.GetLanguage()
+	languageOptions := []string{"English", "Spanish", "Other..."}
 	languagePrompt := &survey.Select{
 		Message: "Choose a language for commit messages:",
-		Options: []string{"English (en)", "Español (es)"},
+		Options: languageOptions,
 		Default: func() string {
-			if currentLanguage == "es" {
-				return "Español (es)"
+			switch currentLanguage {
+			case "Spanish":
+				return "Spanish"
+			case "English":
+				return "English"
+			default:
+				return "Other..."
 			}
-			return "English (en)"
 		}(),
 	}
 	var selectedLanguage string
@@ -120,19 +125,31 @@ func runInteractiveConfig() {
 		return
 	}
 
-	// Extract language code from selection
-	langCode := "en"
-	if selectedLanguage == "Español (es)" {
-		langCode = "es"
+	var langValue string
+	switch selectedLanguage {
+	case "Spanish":
+		langValue = "Spanish"
+	case "English":
+		langValue = "English"
+	case "Other...":
+		otherPrompt := &survey.Input{
+			Message: "Enter language name (e.g., 'Arabic', 'Korean', 'French'):",
+			Default: currentLanguage,
+		}
+		err = survey.AskOne(otherPrompt, &langValue)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
 	}
 
-	if langCode != currentLanguage {
-		err := config.SetLanguage(langCode)
+	if langValue != "" && langValue != currentLanguage {
+		err := config.SetLanguage(langValue)
 		if err != nil {
 			fmt.Printf("Error setting language: %v\n", err)
 			return
 		}
-		fmt.Printf("Language set to: %s\n", langCode)
+		fmt.Printf("Language set to: %s\n", langValue)
 	}
 
 	// API key configuration - skip for copilot and anthropic

@@ -23,7 +23,6 @@ type ProviderConfig struct {
 type Config struct {
 	Providers      map[string]ProviderConfig `mapstructure:"providers"`
 	ActiveProvider string                    `mapstructure:"active_provider"`
-	Language       string                    `mapstructure:"language"`
 }
 
 var cfg *Config
@@ -32,6 +31,7 @@ func InitConfig() {
 	viper.SetConfigName(".lazycommit")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(getConfigDir())
+
 	viper.SetConfigFile(filepath.Join(getConfigDir(), ".lazycommit.yaml"))
 
 	if token, err := LoadGitHubToken(); err == nil && token != "" {
@@ -43,13 +43,8 @@ func InitConfig() {
 		viper.SetDefault("providers.openai.model", "openai/gpt-5-mini")
 	}
 
-	// Set defaults for anthropic provider
 	viper.SetDefault("providers.anthropic.model", "claude-haiku-4-5")
 	viper.SetDefault("providers.anthropic.num_suggestions", 10)
-
-	// Set default language
-	viper.SetDefault("language", "en")
-
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
@@ -73,7 +68,6 @@ func InitConfig() {
 		os.Exit(1)
 	}
 
-	// Initialize prompt configuration
 	InitPromptConfig()
 }
 
@@ -287,25 +281,6 @@ func SetNumSuggestions(provider, numSuggestions string) error {
 		InitConfig()
 	}
 	viper.Set(fmt.Sprintf("providers.%s.num_suggestions", provider), numSuggestions)
-	return viper.WriteConfig()
-}
-
-func GetLanguage() string {
-	if cfg == nil {
-		InitConfig()
-	}
-	if cfg.Language == "" {
-		return "en" // Default to English
-	}
-	return cfg.Language
-}
-
-func SetLanguage(language string) error {
-	if cfg == nil {
-		InitConfig()
-	}
-	cfg.Language = language
-	viper.Set("language", language)
 	return viper.WriteConfig()
 }
 
