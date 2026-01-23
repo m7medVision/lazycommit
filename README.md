@@ -96,7 +96,7 @@ providers:
 ```
 
 > [!NOTE]
-> `.lazycommit.yaml: language` is deprecated and will be removed in a future release. Use `.lazycommit.prompts.yaml` instead.
+> `.lazycommit.yaml: language` is removed and please use `.lazycommit.prompts.yaml` instead.
 
 ### 2. Prompt Configuration (`~/.config/.lazycommit.prompts.yaml`)
 Contains prompt templates and message configurations. **Safe to share in dotfiles and Git.**
@@ -117,11 +117,8 @@ If a field is missing in your repository-local configuration, the value from the
 Example `.lazycommit.prompts.yaml` for a Korean project:
 ```yaml
 language: Korean
-commit_message_template: "Based on the following git diff, generate 5 conventional commit messages in Korean:\n\n%s"
+commit_message_template: "Based on the following git diff, generate 5 conventional commit messages:\n\n%s"
 ```
-
-**Note:** It is recommended to use only `.lazycommit.prompts.yaml` for repository-specific overrides. Avoid using a local `.lazycommit.yaml` (provider config) to prevent accidentally committing sensitive information like API keys.
-
 This file is automatically created on first run in the global config directory with sensible defaults:
 
 ```yaml
