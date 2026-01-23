@@ -32,6 +32,7 @@ func InitConfig() {
 	viper.SetConfigName(".lazycommit")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(getConfigDir())
+
 	viper.SetConfigFile(filepath.Join(getConfigDir(), ".lazycommit.yaml"))
 
 	if token, err := LoadGitHubToken(); err == nil && token != "" {
@@ -43,11 +44,8 @@ func InitConfig() {
 		viper.SetDefault("providers.openai.model", "openai/gpt-5-mini")
 	}
 
-	// Set defaults for anthropic provider
 	viper.SetDefault("providers.anthropic.model", "claude-haiku-4-5")
 	viper.SetDefault("providers.anthropic.num_suggestions", 10)
-
-	// Set default language
 	viper.SetDefault("language", "en")
 
 	viper.AutomaticEnv()
@@ -73,7 +71,6 @@ func InitConfig() {
 		os.Exit(1)
 	}
 
-	// Initialize prompt configuration
 	InitPromptConfig()
 }
 

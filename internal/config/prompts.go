@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/m7medvision/lazycommit/internal/git"
 	"gopkg.in/yaml.v3"
 )
 
@@ -12,6 +13,7 @@ type PromptConfig struct {
 	SystemMessage         string `yaml:"system_message"`
 	CommitMessageTemplate string `yaml:"commit_message_template"`
 	PRTitleTemplate       string `yaml:"pr_title_template"`
+	Language              string `yaml:"language,omitempty"`
 }
 
 var promptsCfg *PromptConfig
@@ -24,7 +26,13 @@ func InitPromptConfig() {
 
 	promptsFile := filepath.Join(getConfigDir(), ".lazycommit.prompts.yaml")
 
-	// Check if prompts file exists
+	if repoRoot, err := git.GetRepoRoot(); err == nil {
+		localPromptsFile := filepath.Join(repoRoot, ".lazycommit.prompts.yaml")
+		if _, err := os.Stat(localPromptsFile); err == nil {
+			promptsFile = localPromptsFile
+		}
+	}
+
 	if _, err := os.Stat(promptsFile); os.IsNotExist(err) {
 		// Create default prompts file
 		defaultConfig := getDefaultPromptConfig()
@@ -111,7 +119,11 @@ func GetCommitMessagePromptFromConfig(diff string) string {
 	}
 
 	// Add language instruction based on configuration
-	language := GetLanguage()
+	language := config.Language
+	if language == "" {
+		language = GetLanguage()
+	}
+
 	if language == "es" {
 		basePrompt += "\n\nIMPORTANT: Generate all commit messages in Spanish."
 	} else if language == "en" {

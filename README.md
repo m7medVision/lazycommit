@@ -116,7 +116,19 @@ Requirements:
 ### 2. Prompt Configuration (`~/.config/.lazycommit.prompts.yaml`)
 Contains prompt templates and message configurations. **Safe to share in dotfiles and Git.**
 
-This file is automatically created on first run with sensible defaults:
+### Per-Repository Configuration
+
+You can override the prompt configuration on a per-repository basis by creating a `.lazycommit.prompts.yaml` file in the root of your git repository. This is useful for projects that require different languages or commit message formats.
+
+Example `.lazycommit.prompts.yaml` for a Korean project:
+```yaml
+language: ko
+commit_message_template: "Based on the following git diff, generate 5 conventional commit messages in Korean:\n\n%s"
+```
+
+**Note:** It is recommended to use only `.lazycommit.prompts.yaml` for repository-specific overrides. Avoid using a local `.lazycommit.yaml` (provider config) to prevent accidentally committing sensitive information like API keys.
+
+This file is automatically created on first run in the global config directory with sensible defaults:
 
 ```yaml
 system_message: "You are a helpful assistant that generates git commit messages, and pull request titles."

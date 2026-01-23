@@ -3,11 +3,19 @@ package git
 import (
 	"bytes"
 	"fmt"
-
 	"os/exec"
+	"strings"
 )
 
-// GetStagedDiff returns the diff of the staged files.
+func GetRepoRoot() (string, error) {
+	cmd := exec.Command("git", "rev-parse", "--show-toplevel")
+	out, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("error running git rev-parse --show-toplevel: %w", err)
+	}
+	return strings.TrimSpace(string(out)), nil
+}
+
 func GetStagedDiff() (string, error) {
 	cmd := exec.Command("git", "diff", "--cached")
 	var out bytes.Buffer
