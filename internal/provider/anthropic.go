@@ -54,79 +54,12 @@ func (a *AnthropicProvider) GenerateCommitMessages(ctx context.Context, diff str
 	fullPrompt := fmt.Sprintf("%s\n\nUser request: %s\n\nIMPORTANT: Generate exactly %d commit messages, one per line. Do not include any other text, explanations, or formatting - just the commit messages.",
 		systemMsg, userPrompt, a.numSuggestions)
 
-	// Execute claude CLI with haiku model
-	// Using -p flag for print mode and --model for model selection
-	// Pipe prompt via stdin to avoid Windows command line length limits (8191 chars)
-	cmd := exec.CommandContext(ctx, "claude", "--model", a.model, "-p", "-")
-
-	stdin, err := cmd.StdinPipe()
+	output, err := a.runCLI(ctx, fullPrompt)
 	if err != nil {
-		return nil, fmt.Errorf("error creating stdin pipe: %w", err)
+		return nil, err
 	}
 
-	var outputBuf strings.Builder
-	cmd.Stdout = &outputBuf
-	cmd.Stderr = &outputBuf
-
-	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("error starting claude CLI: %w", err)
-	}
-
-	_, writeErr := stdin.Write([]byte(fullPrompt))
-	stdin.Close()
-
-	waitErr := cmd.Wait()
-
-	if writeErr != nil {
-		return nil, fmt.Errorf("error writing to claude CLI stdin: %w", writeErr)
-	}
-
-	if waitErr != nil {
-		return nil, fmt.Errorf("error executing claude CLI: %w\nOutput: %s", waitErr, outputBuf.String())
-	}
-
-	output := []byte(outputBuf.String())
-
-	// Parse the output - split by newlines and clean
-	content := string(output)
-	lines := strings.Split(content, "\n")
-
-	var commitMessages []string
-	for _, line := range lines {
-		trimmed := strings.TrimSpace(line)
-		// Skip empty lines and lines that look like explanatory text
-		if trimmed == "" {
-			continue
-		}
-		// Skip lines that are clearly not commit messages (too long, contain certain patterns)
-		if len(trimmed) > 200 {
-			continue
-		}
-		// Skip markdown formatting or numbered lists
-		if strings.HasPrefix(trimmed, "#") || strings.HasPrefix(trimmed, "-") || strings.HasPrefix(trimmed, "*") {
-			// Try to extract the actual commit message
-			parts := strings.SplitN(trimmed, " ", 2)
-			if len(parts) == 2 {
-				trimmed = strings.TrimSpace(parts[1])
-			}
-		}
-		// Remove numbered list formatting like "1. " or "1) "
-		if len(trimmed) > 3 {
-			if (trimmed[0] >= '0' && trimmed[0] <= '9') && (trimmed[1] == '.' || trimmed[1] == ')') {
-				trimmed = strings.TrimSpace(trimmed[2:])
-			}
-		}
-
-		if trimmed != "" {
-			commitMessages = append(commitMessages, trimmed)
-		}
-
-		// Stop once we have enough messages
-		if len(commitMessages) >= a.numSuggestions {
-			break
-		}
-	}
-
+	commitMessages := parseOutputLines(output, a.numSuggestions)
 	if len(commitMessages) == 0 {
 		return nil, fmt.Errorf("no valid commit messages generated from Claude output")
 	}
@@ -163,77 +96,50 @@ func (a *AnthropicProvider) GeneratePRTitles(ctx context.Context, diff string) (
 	fullPrompt := fmt.Sprintf("%s\n\nUser request: %s\n\nIMPORTANT: Generate exactly %d pull request titles, one per line. Do not include any other text, explanations, or formatting - just the PR titles.",
 		systemMsg, userPrompt, a.numSuggestions)
 
-	// Pipe prompt via stdin to avoid Windows command line length limits (8191 chars)
-	cmd := exec.CommandContext(ctx, "claude", "--model", a.model, "-p", "-")
-
-	stdin, err := cmd.StdinPipe()
+	output, err := a.runCLI(ctx, fullPrompt)
 	if err != nil {
-		return nil, fmt.Errorf("error creating stdin pipe: %w", err)
+		return nil, err
 	}
 
-	var outputBuf strings.Builder
-	cmd.Stdout = &outputBuf
-	cmd.Stderr = &outputBuf
-
-	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("error starting claude CLI: %w", err)
-	}
-
-	_, writeErr := stdin.Write([]byte(fullPrompt))
-	stdin.Close()
-
-	waitErr := cmd.Wait()
-
-	if writeErr != nil {
-		return nil, fmt.Errorf("error writing to claude CLI stdin: %w", writeErr)
-	}
-
-	if waitErr != nil {
-		return nil, fmt.Errorf("error executing claude CLI: %w\nOutput: %s", waitErr, outputBuf.String())
-	}
-
-	output := []byte(outputBuf.String())
-
-	// Parse the output - same logic as commit message generation
-	content := string(output)
-	lines := strings.Split(content, "\n")
-
-	var prTitles []string
-	for _, line := range lines {
-		trimmed := strings.TrimSpace(line)
-		if trimmed == "" {
-			continue
-		}
-		if len(trimmed) > 200 {
-			continue
-		}
-		// Skip markdown formatting or numbered lists
-		if strings.HasPrefix(trimmed, "#") || strings.HasPrefix(trimmed, "-") || strings.HasPrefix(trimmed, "*") {
-			parts := strings.SplitN(trimmed, " ", 2)
-			if len(parts) == 2 {
-				trimmed = strings.TrimSpace(parts[1])
-			}
-		}
-		// Remove numbered list formatting like "1. " or "1) "
-		if len(trimmed) > 3 {
-			if (trimmed[0] >= '0' && trimmed[0] <= '9') && (trimmed[1] == '.' || trimmed[1] == ')') {
-				trimmed = strings.TrimSpace(trimmed[2:])
-			}
-		}
-
-		if trimmed != "" {
-			prTitles = append(prTitles, trimmed)
-		}
-
-		// Stop once we have enough titles
-		if len(prTitles) >= a.numSuggestions {
-			break
-		}
-	}
-
+	prTitles := parseOutputLines(output, a.numSuggestions)
 	if len(prTitles) == 0 {
 		return nil, fmt.Errorf("no valid PR titles generated from Claude output")
 	}
 
 	return prTitles, nil
+}
+
+// runCLI executes the claude CLI with the given prompt via stdin and returns stdout.
+func (a *AnthropicProvider) runCLI(ctx context.Context, prompt string) (string, error) {
+	// Using -p flag for print mode and --model for model selection
+	// Pipe prompt via stdin to avoid Windows command line length limits (8191 chars)
+	cmd := exec.CommandContext(ctx, "claude", "--model", a.model, "-p", "-")
+
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return "", fmt.Errorf("error creating stdin pipe: %w", err)
+	}
+
+	var stdoutBuf, stderrBuf strings.Builder
+	cmd.Stdout = &stdoutBuf
+	cmd.Stderr = &stderrBuf
+
+	if err := cmd.Start(); err != nil {
+		return "", fmt.Errorf("error starting claude CLI: %w", err)
+	}
+
+	_, writeErr := stdin.Write([]byte(prompt))
+	stdin.Close()
+
+	waitErr := cmd.Wait()
+
+	if writeErr != nil {
+		return "", fmt.Errorf("error writing to claude CLI stdin: %w", writeErr)
+	}
+
+	if waitErr != nil {
+		return "", fmt.Errorf("error executing claude CLI: %w\nStderr: %s", waitErr, stderrBuf.String())
+	}
+
+	return stdoutBuf.String(), nil
 }
