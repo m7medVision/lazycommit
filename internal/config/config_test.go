@@ -162,8 +162,8 @@ func TestGetEndpoint_CustomEndpoint(t *testing.T) {
 		cfg.Providers = make(map[string]ProviderConfig)
 	}
 	cfg.Providers[testProvider] = ProviderConfig{
-		APIKey:     "test-key",
-		Model:      "test-model",
+		APIKey:      "test-key",
+		Model:       "test-model",
 		EndpointURL: customEndpoint,
 	}
 
@@ -221,12 +221,12 @@ func TestSetEndpoint_Validation(t *testing.T) {
 		endpoint string
 		valid    bool
 	}{
-		{"", true},                           // Empty should be valid (default)
-		{"https://api.openai.com/v1", true},  // Valid HTTPS URL
-		{"http://localhost:11434", true},     // Valid HTTP URL
-		{"ftp://invalid.com", false},         // Invalid protocol
-		{"not-a-url", false},                 // Invalid format
-		{"https://", false},                  // Missing host
+		{"", true},                          // Empty should be valid (default)
+		{"https://api.openai.com/v1", true}, // Valid HTTPS URL
+		{"http://localhost:11434", true},    // Valid HTTP URL
+		{"ftp://invalid.com", false},        // Invalid protocol
+		{"not-a-url", false},                // Invalid format
+		{"https://", false},                 // Missing host
 	}
 
 	for _, tc := range testCases {

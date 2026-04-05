@@ -81,7 +81,7 @@ func runInteractiveConfig() {
 
 	providerPrompt := &survey.Select{
 		Message: "Choose a provider:",
-		Options: []string{"openai", "copilot", "anthropic"},
+		Options: []string{"openai", "copilot", "anthropic", "gemini"},
 		Default: currentProvider,
 	}
 	var selectedProvider string
@@ -152,8 +152,8 @@ func runInteractiveConfig() {
 		fmt.Printf("Language set to: %s\n", langValue)
 	}
 
-	// API key configuration - skip for copilot and anthropic
-	if selectedProvider != "copilot" && selectedProvider != "anthropic" {
+	// API key configuration - skip for copilot, anthropic and gemini
+	if selectedProvider != "copilot" && selectedProvider != "anthropic" && selectedProvider != "gemini" {
 		apiKeyPrompt := &survey.Input{
 			Message: fmt.Sprintf("Enter API Key for %s:", selectedProvider),
 		}
@@ -173,12 +173,15 @@ func runInteractiveConfig() {
 		}
 	} else if selectedProvider == "anthropic" {
 		fmt.Println("Anthropic provider uses Claude Code CLI - no API key needed.")
+	} else if selectedProvider == "gemini" {
+		fmt.Println("Gemini provider uses Gemini CLI - no API key needed.")
 	}
 
 	availableModels := map[string][]string{
 		"openai":    {},
 		"copilot":   {},
 		"anthropic": {},
+		"gemini":    {},
 	}
 
 	modelDisplayToID := map[string]string{}
@@ -213,6 +216,12 @@ func runInteractiveConfig() {
 			availableModels["anthropic"] = append(availableModels["anthropic"], display)
 			modelDisplayToID[display] = m.APIModel
 		}
+	case "gemini":
+		for _, m := range models.GeminiModels {
+			display := fmt.Sprintf("%s (%s)", m.Name, m.APIModel)
+			availableModels["gemini"] = append(availableModels["gemini"], display)
+			modelDisplayToID[display] = m.APIModel
+		}
 	}
 
 	modelPrompt := &survey.Select{
@@ -223,7 +232,7 @@ func runInteractiveConfig() {
 	// Try to set the default to the current model if possible
 	isValidDefault := false
 	currentDisplay := ""
-	if selectedProvider == "openai" || selectedProvider == "anthropic" || selectedProvider == "copilot" {
+	if selectedProvider == "openai" || selectedProvider == "anthropic" || selectedProvider == "copilot" || selectedProvider == "gemini" {
 		for display, id := range modelDisplayToID {
 			if id == currentModel || display == currentModel {
 				isValidDefault = true
@@ -252,7 +261,7 @@ func runInteractiveConfig() {
 	}
 
 	selectedModel := selectedDisplay
-	if selectedProvider == "openai" || selectedProvider == "anthropic" || selectedProvider == "copilot" {
+	if selectedProvider == "openai" || selectedProvider == "anthropic" || selectedProvider == "copilot" || selectedProvider == "gemini" {
 		selectedModel = modelDisplayToID[selectedDisplay]
 	}
 
@@ -265,8 +274,8 @@ func runInteractiveConfig() {
 		fmt.Printf("Model set to: %s\n", selectedModel)
 	}
 
-	// Number of suggestions configuration for anthropic
-	if selectedProvider == "anthropic" {
+	// Number of suggestions configuration for anthropic and gemini
+	if selectedProvider == "anthropic" || selectedProvider == "gemini" {
 		numSuggestionsPrompt := &survey.Input{
 			Message: "Number of commit message suggestions (default: 10):",
 			Default: "10",
@@ -290,8 +299,8 @@ func runInteractiveConfig() {
 	// Get current endpoint
 	currentEndpoint, _ := config.GetEndpoint()
 
-	// Endpoint configuration prompt - skip for anthropic since it uses CLI
-	if selectedProvider != "anthropic" {
+	// Endpoint configuration prompt - skip for anthropic and gemini since they use CLI
+	if selectedProvider != "anthropic" && selectedProvider != "gemini" {
 		endpointPrompt := &survey.Input{
 			Message: "Enter custom endpoint URL (leave empty for default):",
 			Default: currentEndpoint,

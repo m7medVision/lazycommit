@@ -93,6 +93,9 @@ providers:
   anthropic:
     model: "claude-haiku-4-5"  # Uses Claude Code CLI - no API key needed
     num_suggestions: 10        # Number of commit suggestions to generate
+  gemini:
+    model: "flash"             # Uses Gemini CLI - no API key needed
+    num_suggestions: 10        # Number of commit suggestions to generate
 ```
 
 > [!NOTE]

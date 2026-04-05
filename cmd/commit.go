@@ -80,6 +80,12 @@ var commitCmd = &cobra.Command{
 				numSuggestions = 10
 			}
 			aiProvider = provider.NewAnthropicProvider(model, numSuggestions)
+		case "gemini":
+			numSuggestions := config.GetNumSuggestions()
+			if numSuggestions <= 0 {
+				numSuggestions = 10
+			}
+			aiProvider = provider.NewGeminiProvider(model, numSuggestions)
 		default:
 			// Default to copilot if provider is not set or unknown
 			aiProvider = provider.NewCopilotProvider(apiKey, endpoint)
