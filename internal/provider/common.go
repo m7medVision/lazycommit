@@ -4,9 +4,49 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"unicode"
 
 	"github.com/openai/openai-go"
 )
+
+// parseOutputLines parses raw LLM output into clean lines, stripping markdown
+// formatting, numbered/bulleted list prefixes, and skipping empty or overly long lines.
+// It returns at most maxLines results.
+func parseOutputLines(raw string, maxLines int) []string {
+	lines := strings.Split(raw, "\n")
+
+	var result []string
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || len(trimmed) > 200 {
+			continue
+		}
+		// Strip markdown heading, bullet, or asterisk prefix
+		if strings.HasPrefix(trimmed, "#") || strings.HasPrefix(trimmed, "-") || strings.HasPrefix(trimmed, "*") {
+			parts := strings.SplitN(trimmed, " ", 2)
+			if len(parts) == 2 {
+				trimmed = strings.TrimSpace(parts[1])
+			}
+		}
+		// Strip numbered list prefix like "1. ", "10) ", "3. "
+		if len(trimmed) > 0 && trimmed[0] >= '0' && trimmed[0] <= '9' {
+			i := 0
+			for i < len(trimmed) && unicode.IsDigit(rune(trimmed[i])) {
+				i++
+			}
+			if i < len(trimmed) && (trimmed[i] == '.' || trimmed[i] == ')') {
+				trimmed = strings.TrimSpace(trimmed[i+1:])
+			}
+		}
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+		if len(result) >= maxLines {
+			break
+		}
+	}
+	return result
+}
 
 // commonProvider holds the common fields and methods for OpenAI-compatible providers.
 type commonProvider struct {

@@ -87,6 +87,9 @@ var prCmd = &cobra.Command{
 			// Get num_suggestions from config
 			numSuggestions := config.GetNumSuggestions()
 			aiProvider = provider.NewAnthropicProvider(model, numSuggestions)
+		case "gemini":
+			numSuggestions := config.GetNumSuggestions()
+			aiProvider = provider.NewGeminiProvider(model, numSuggestions)
 		default:
 			// Default to copilot if provider is not set or unknown
 			aiProvider = provider.NewCopilotProvider(apiKey, endpoint)

@@ -25,6 +25,7 @@ type Model struct {
 const (
 	ProviderOpenAI    ModelProvider = "openai"
 	ProviderAnthropic ModelProvider = "anthropic"
+	ProviderGemini    ModelProvider = "gemini"
 
 	GPT41        ModelID = "gpt-4.1"
 	GPT41Mini    ModelID = "gpt-4.1-mini"
@@ -40,6 +41,13 @@ const (
 	O4Mini       ModelID = "o4-mini"
 
 	ClaudeHaiku45 ModelID = "claude-haiku-4-5"
+
+	GeminiAuto      ModelID = "auto"
+	GeminiPro       ModelID = "pro"
+	GeminiFlash     ModelID = "flash"
+	GeminiFlashLite ModelID = "flash-lite"
+	Gemini25Pro     ModelID = "gemini-2.5-pro"
+	Gemini25Flash   ModelID = "gemini-2.5-flash"
 )
 
 var OpenAIModels = map[ModelID]Model{
@@ -217,6 +225,59 @@ var AnthropicModels = map[ModelID]Model{
 		CostPer1MOutCached:  0.40,
 		ContextWindow:       200_000,
 		DefaultMaxTokens:    8192,
+		SupportsAttachments: true,
+	},
+}
+
+var GeminiModels = map[ModelID]Model{
+	GeminiAuto: {
+		ID:                  GeminiAuto,
+		Name:                "Gemini Auto",
+		Provider:            ProviderGemini,
+		APIModel:            "auto",
+		ContextWindow:       1_000_000,
+		SupportsAttachments: true,
+	},
+	GeminiPro: {
+		ID:                  GeminiPro,
+		Name:                "Gemini Pro",
+		Provider:            ProviderGemini,
+		APIModel:            "pro",
+		ContextWindow:       2_000_000,
+		CanReason:           true,
+		SupportsAttachments: true,
+	},
+	GeminiFlash: {
+		ID:                  GeminiFlash,
+		Name:                "Gemini Flash",
+		Provider:            ProviderGemini,
+		APIModel:            "flash",
+		ContextWindow:       1_000_000,
+		SupportsAttachments: true,
+	},
+	GeminiFlashLite: {
+		ID:                  GeminiFlashLite,
+		Name:                "Gemini Flash Lite",
+		Provider:            ProviderGemini,
+		APIModel:            "flash-lite",
+		ContextWindow:       1_000_000,
+		SupportsAttachments: true,
+	},
+	Gemini25Pro: {
+		ID:                  Gemini25Pro,
+		Name:                "Gemini 2.5 Pro",
+		Provider:            ProviderGemini,
+		APIModel:            "gemini-2.5-pro",
+		ContextWindow:       2_000_000,
+		CanReason:           true,
+		SupportsAttachments: true,
+	},
+	Gemini25Flash: {
+		ID:                  Gemini25Flash,
+		Name:                "Gemini 2.5 Flash",
+		Provider:            ProviderGemini,
+		APIModel:            "gemini-2.5-flash",
+		ContextWindow:       1_000_000,
 		SupportsAttachments: true,
 	},
 }

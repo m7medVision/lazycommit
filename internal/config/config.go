@@ -45,6 +45,8 @@ func InitConfig() {
 
 	viper.SetDefault("providers.anthropic.model", "claude-haiku-4-5")
 	viper.SetDefault("providers.anthropic.num_suggestions", 10)
+	viper.SetDefault("providers.gemini.model", "flash")
+	viper.SetDefault("providers.gemini.num_suggestions", 10)
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
@@ -149,6 +151,8 @@ func GetEndpoint() (string, error) {
 		return "https://api.githubcopilot.com", nil
 	case "anthropic":
 		return "", nil // Anthropic uses CLI, no endpoint needed
+	case "gemini":
+		return "", nil // Gemini uses CLI, no endpoint needed
 	default:
 		return "", fmt.Errorf("no default endpoint available for provider '%s'", cfg.ActiveProvider)
 	}
