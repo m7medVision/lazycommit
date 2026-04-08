@@ -1,3 +1,5 @@
+version: 2
+
 project_name: lazycommit
 
 release:
@@ -19,10 +21,10 @@ builds:
 
 archives:
   - id: archive
-    builds: [lazycommit]
+    ids: [lazycommit]
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
 
 checksum:
   name_template: "checksums.txt"
@@ -34,5 +36,3 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
-
-
