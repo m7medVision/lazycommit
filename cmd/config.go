@@ -81,7 +81,7 @@ func runInteractiveConfig() {
 
 	providerPrompt := &survey.Select{
 		Message: "Choose a provider:",
-		Options: []string{"openai", "copilot", "anthropic", "gemini"},
+		Options: []string{"opencode", "openai", "copilot", "anthropic", "gemini"},
 		Default: currentProvider,
 	}
 	var selectedProvider string
@@ -152,8 +152,8 @@ func runInteractiveConfig() {
 		fmt.Printf("Language set to: %s\n", langValue)
 	}
 
-	// API key configuration - skip for copilot, anthropic and gemini
-	if selectedProvider != "copilot" && selectedProvider != "anthropic" && selectedProvider != "gemini" {
+	// API key configuration - skip for CLI-backed providers and copilot token exchange.
+	if selectedProvider != "copilot" && selectedProvider != "anthropic" && selectedProvider != "gemini" && selectedProvider != "opencode" {
 		apiKeyPrompt := &survey.Input{
 			Message: fmt.Sprintf("Enter API Key for %s:", selectedProvider),
 		}
@@ -175,6 +175,8 @@ func runInteractiveConfig() {
 		fmt.Println("Anthropic provider uses Claude Code CLI - no API key needed.")
 	} else if selectedProvider == "gemini" {
 		fmt.Println("Gemini provider uses Gemini CLI - no API key needed.")
+	} else if selectedProvider == "opencode" {
+		fmt.Println("opencode provider uses opencode CLI - no API key needed.")
 	}
 
 	availableModels := map[string][]string{
@@ -182,6 +184,7 @@ func runInteractiveConfig() {
 		"copilot":   {},
 		"anthropic": {},
 		"gemini":    {},
+		"opencode":  {},
 	}
 
 	modelDisplayToID := map[string]string{}
@@ -222,6 +225,12 @@ func runInteractiveConfig() {
 			availableModels["gemini"] = append(availableModels["gemini"], display)
 			modelDisplayToID[display] = m.APIModel
 		}
+	case "opencode":
+		for _, m := range models.OpencodeModels {
+			display := fmt.Sprintf("%s (%s)", m.Name, m.APIModel)
+			availableModels["opencode"] = append(availableModels["opencode"], display)
+			modelDisplayToID[display] = m.APIModel
+		}
 	}
 
 	modelPrompt := &survey.Select{
@@ -232,7 +241,7 @@ func runInteractiveConfig() {
 	// Try to set the default to the current model if possible
 	isValidDefault := false
 	currentDisplay := ""
-	if selectedProvider == "openai" || selectedProvider == "anthropic" || selectedProvider == "copilot" || selectedProvider == "gemini" {
+	if selectedProvider == "openai" || selectedProvider == "anthropic" || selectedProvider == "copilot" || selectedProvider == "gemini" || selectedProvider == "opencode" {
 		for display, id := range modelDisplayToID {
 			if id == currentModel || display == currentModel {
 				isValidDefault = true
@@ -261,7 +270,7 @@ func runInteractiveConfig() {
 	}
 
 	selectedModel := selectedDisplay
-	if selectedProvider == "openai" || selectedProvider == "anthropic" || selectedProvider == "copilot" || selectedProvider == "gemini" {
+	if selectedProvider == "openai" || selectedProvider == "anthropic" || selectedProvider == "copilot" || selectedProvider == "gemini" || selectedProvider == "opencode" {
 		selectedModel = modelDisplayToID[selectedDisplay]
 	}
 
@@ -274,8 +283,8 @@ func runInteractiveConfig() {
 		fmt.Printf("Model set to: %s\n", selectedModel)
 	}
 
-	// Number of suggestions configuration for anthropic and gemini
-	if selectedProvider == "anthropic" || selectedProvider == "gemini" {
+	// Number of suggestions configuration for CLI-backed providers.
+	if selectedProvider == "anthropic" || selectedProvider == "gemini" || selectedProvider == "opencode" {
 		numSuggestionsPrompt := &survey.Input{
 			Message: "Number of commit message suggestions (default: 10):",
 			Default: "10",
@@ -299,8 +308,8 @@ func runInteractiveConfig() {
 	// Get current endpoint
 	currentEndpoint, _ := config.GetEndpoint()
 
-	// Endpoint configuration prompt - skip for anthropic and gemini since they use CLI
-	if selectedProvider != "anthropic" && selectedProvider != "gemini" {
+	// Endpoint configuration prompt - skip CLI-backed providers.
+	if selectedProvider != "anthropic" && selectedProvider != "gemini" && selectedProvider != "opencode" {
 		endpointPrompt := &survey.Input{
 			Message: "Enter custom endpoint URL (leave empty for default):",
 			Default: currentEndpoint,

@@ -11,7 +11,7 @@ AI-powered Git commit message generator that analyzes your staged changes and ou
 
 - Generates configurable number of commit message suggestions from your staged diff
 -  Generates 10 pull request titles based on the diff between the current branch and a target branch
-- Providers: GitHub Copilot (default), OpenAI, Anthropic (Claude Code CLI)
+- Providers: opencode (default, free models), GitHub Copilot, OpenAI, Anthropic (Claude Code CLI), Gemini CLI
 - Multi-language support: Any language (English, Arabic, Korean, etc.)
 - Interactive config to pick provider/model/language and set keys
 - Simple output suitable for piping into TUI menus (one message per line)
@@ -21,6 +21,8 @@ AI-powered Git commit message generator that analyzes your staged changes and ou
 ```bash
 go install github.com/m7medvision/lazycommit@latest
 ```
+
+The default provider is `opencode`, so install and authenticate the `opencode` CLI before running `lazycommit commit`.
 
 Or build from source:
 
@@ -80,8 +82,16 @@ lazycommit uses a two-file configuration system to separate sensitive provider s
 Contains API keys, tokens, and provider-specific settings. **Do not share this file.**
 
 ```yaml
-active_provider: copilot # default if a GitHub token is found
+active_provider: opencode # default; uses opencode CLI free models
 providers:
+  opencode:
+    model: "opencode/minimax-m2.5-free" # Uses opencode CLI - no API key needed
+    fallback_models:
+      - "opencode/minimax-m2.5-free"
+      - "opencode/linng-2.6-flash-free"
+      - "opencode/hy3-preview-free"
+      - "opencode/nemotron-3-super-free"
+    num_suggestions: 10
   copilot:
     api_key: "$GITHUB_TOKEN"   # Uses GitHub token; token is exchanged internally
     model: "gpt-4o"            # or "openai/gpt-4o"; both accepted
@@ -264,6 +274,7 @@ If you are using Commitizen with Lazygit, you can add this custom command:
 ## Troubleshooting
 
 - "No staged changes to commit." — run `git add` first.
+- "opencode CLI not found" — install `opencode` or switch providers with `lazycommit config set`.
 - "API key not set" — set the appropriate key in `.lazycommit.yaml` or env var and rerun.
 - Copilot errors about token exchange — ensure your GitHub token has models scope or is valid; try setting `GITHUB_TOKEN`.
 

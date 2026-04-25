@@ -14,10 +14,11 @@ import (
 )
 
 type ProviderConfig struct {
-	APIKey         string `mapstructure:"api_key"`
-	Model          string `mapstructure:"model"`
-	EndpointURL    string `mapstructure:"endpoint_url"`
-	NumSuggestions int    `mapstructure:"num_suggestions"`
+	APIKey         string   `mapstructure:"api_key"`
+	Model          string   `mapstructure:"model"`
+	EndpointURL    string   `mapstructure:"endpoint_url"`
+	NumSuggestions int      `mapstructure:"num_suggestions"`
+	FallbackModels []string `mapstructure:"fallback_models"`
 }
 
 type Config struct {
@@ -34,15 +35,22 @@ func InitConfig() {
 
 	viper.SetConfigFile(filepath.Join(getConfigDir(), ".lazycommit.yaml"))
 
+	viper.SetDefault("active_provider", "opencode")
+	viper.SetDefault("providers.opencode.model", "opencode/minimax-m2.5-free")
+	viper.SetDefault("providers.opencode.fallback_models", []string{
+		"opencode/minimax-m2.5-free",
+		"opencode/ling-2.6-flash-free",
+		"opencode/hy3-preview-free",
+		"opencode/nemotron-3-super-free",
+	})
+	viper.SetDefault("providers.opencode.num_suggestions", 10)
+
 	if token, err := LoadGitHubToken(); err == nil && token != "" {
-		viper.SetDefault("active_provider", "copilot")
 		viper.SetDefault("providers.copilot.api_key", token)
-		viper.SetDefault("providers.copilot.model", "openai/gpt-5-mini")
-	} else {
-		viper.SetDefault("active_provider", "openai")
-		viper.SetDefault("providers.openai.model", "openai/gpt-5-mini")
 	}
 
+	viper.SetDefault("providers.copilot.model", "openai/gpt-5-mini")
+	viper.SetDefault("providers.openai.model", "openai/gpt-5-mini")
 	viper.SetDefault("providers.anthropic.model", "claude-haiku-4-5")
 	viper.SetDefault("providers.anthropic.num_suggestions", 10)
 	viper.SetDefault("providers.gemini.model", "flash")
@@ -153,6 +161,8 @@ func GetEndpoint() (string, error) {
 		return "", nil // Anthropic uses CLI, no endpoint needed
 	case "gemini":
 		return "", nil // Gemini uses CLI, no endpoint needed
+	case "opencode":
+		return "", nil // opencode uses CLI, no endpoint needed
 	default:
 		return "", fmt.Errorf("no default endpoint available for provider '%s'", cfg.ActiveProvider)
 	}
@@ -278,6 +288,17 @@ func GetNumSuggestions() int {
 		return 10 // Default to 10 if not set or invalid
 	}
 	return providerConfig.NumSuggestions
+}
+
+func GetFallbackModels() []string {
+	if cfg == nil {
+		InitConfig()
+	}
+	providerConfig, err := GetActiveProviderConfig()
+	if err != nil {
+		return nil
+	}
+	return providerConfig.FallbackModels
 }
 
 func SetNumSuggestions(provider, numSuggestions string) error {
