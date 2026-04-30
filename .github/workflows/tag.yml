@@ -29,13 +29,20 @@ jobs:
       - name: Run semantic-release
         id: release
         run: |
+          before=$(git tag -l | sort -V | tail -1)
           npx semantic-release
-          new_tag=$(git describe --tags --abbrev=0)
-          echo "new_tag=$new_tag" >> "$GITHUB_OUTPUT"
+          after=$(git tag -l | sort -V | tail -1)
+          if [ "$before" != "$after" ]; then
+            echo "released=true" >> "$GITHUB_OUTPUT"
+            echo "new_tag=$after" >> "$GITHUB_OUTPUT"
+          else
+            echo "released=false" >> "$GITHUB_OUTPUT"
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Trigger release workflow
+        if: steps.release.outputs.released == 'true'
         run: |
           gh workflow run release.yml --ref main
         env:
