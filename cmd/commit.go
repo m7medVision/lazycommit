@@ -41,9 +41,9 @@ var commitCmd = &cobra.Command{
 
 		providerName := config.GetProvider()
 
-		// API key is not needed for anthropic provider (uses CLI)
+		// API keys are not needed for CLI-backed providers.
 		var apiKey string
-		if providerName != "anthropic" {
+		if providerName != "anthropic" && providerName != "gemini" && providerName != "opencode" {
 			var err error
 			apiKey, err = config.GetAPIKey()
 			if err != nil {
@@ -53,7 +53,7 @@ var commitCmd = &cobra.Command{
 		}
 
 		var model string
-		if providerName == "copilot" || providerName == "openai" || providerName == "anthropic" {
+		if providerName == "copilot" || providerName == "openai" || providerName == "anthropic" || providerName == "gemini" || providerName == "opencode" {
 			var err error
 			model, err = config.GetModel()
 			if err != nil {
@@ -86,6 +86,12 @@ var commitCmd = &cobra.Command{
 				numSuggestions = 10
 			}
 			aiProvider = provider.NewGeminiProvider(model, numSuggestions)
+		case "opencode":
+			numSuggestions := config.GetNumSuggestions()
+			if numSuggestions <= 0 {
+				numSuggestions = 10
+			}
+			aiProvider = provider.NewOpencodeProvider(model, config.GetFallbackModels(), numSuggestions)
 		default:
 			// Default to copilot if provider is not set or unknown
 			aiProvider = provider.NewCopilotProvider(apiKey, endpoint)

@@ -26,6 +26,7 @@ const (
 	ProviderOpenAI    ModelProvider = "openai"
 	ProviderAnthropic ModelProvider = "anthropic"
 	ProviderGemini    ModelProvider = "gemini"
+	ProviderOpencode  ModelProvider = "opencode"
 
 	GPT41        ModelID = "gpt-4.1"
 	GPT41Mini    ModelID = "gpt-4.1-mini"
@@ -48,6 +49,11 @@ const (
 	GeminiFlashLite ModelID = "flash-lite"
 	Gemini25Pro     ModelID = "gemini-2.5-pro"
 	Gemini25Flash   ModelID = "gemini-2.5-flash"
+
+	OpencodeMinimaxM25Free     ModelID = "opencode/minimax-m2.5-free"
+	OpencodeLing26FlashFree    ModelID = "opencode/ling-2.6-flash-free"
+	OpencodeHy3PreviewFree     ModelID = "opencode/hy3-preview-free"
+	OpencodeNemotron3SuperFree ModelID = "opencode/nemotron-3-super-free"
 )
 
 var OpenAIModels = map[ModelID]Model{
@@ -279,5 +285,32 @@ var GeminiModels = map[ModelID]Model{
 		APIModel:            "gemini-2.5-flash",
 		ContextWindow:       1_000_000,
 		SupportsAttachments: true,
+	},
+}
+
+var OpencodeModels = map[ModelID]Model{
+	OpencodeMinimaxM25Free: {
+		ID:       OpencodeMinimaxM25Free,
+		Name:     "Minimax M2.5 Free",
+		Provider: ProviderOpencode,
+		APIModel: string(OpencodeMinimaxM25Free),
+	},
+	OpencodeLing26FlashFree: {
+		ID:       OpencodeLing26FlashFree,
+		Name:     "Ling 2.6 Flash Free",
+		Provider: ProviderOpencode,
+		APIModel: string(OpencodeLing26FlashFree),
+	},
+	OpencodeHy3PreviewFree: {
+		ID:       OpencodeHy3PreviewFree,
+		Name:     "HY3 Preview Free",
+		Provider: ProviderOpencode,
+		APIModel: string(OpencodeHy3PreviewFree),
+	},
+	OpencodeNemotron3SuperFree: {
+		ID:       OpencodeNemotron3SuperFree,
+		Name:     "Nemotron 3 Super Free",
+		Provider: ProviderOpencode,
+		APIModel: string(OpencodeNemotron3SuperFree),
 	},
 }
