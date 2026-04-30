@@ -5,7 +5,7 @@
     "@semantic-release/release-notes-generator",
     "@semantic-release/git",
     ["@semantic-release/exec", {
-      "publishCmd": "echo \"${nextRelease.notes}\" > /tmp/release-notes.md && goreleaser release --clean --release-notes /tmp/release-notes.md"
+      "publishCmd": "echo \"${nextRelease.notes}\" > /tmp/release-notes.md && rm -rf node_modules && goreleaser release --clean --release-notes /tmp/release-notes.md"
     }]
   ]
 }

@@ -52,5 +52,8 @@ Thumbs.db
 bin/
 obj/
 
+# Node.js
+node_modules/
+
 # Lazycommit specific
 lazycommit
