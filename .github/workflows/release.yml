@@ -8,9 +8,11 @@ on:
 
 permissions:
   contents: write
+  issues: write
+  pull-requests: write
 
 jobs:
-  goreleaser:
+  release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -18,33 +20,24 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: "1.21"
 
-      - name: Auto-tag
-        run: |
-          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          version=${latest_tag#v}
-          IFS='.' read -r major minor patch <<< "$version"
-          feat_count=$(git log "$latest_tag"..HEAD --oneline --grep='^feat[(:]' | wc -l)
-          if [ "$feat_count" -gt 0 ]; then
-            minor=$((minor + 1))
-            patch=0
-          else
-            patch=$((patch + 1))
-          fi
-          new_tag="v$major.$minor.$patch"
-          echo "Creating tag $new_tag"
-          git tag "$new_tag"
-          git push origin "$new_tag"
-
-      - name: Run GoReleaser
+      - name: Install GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
           version: "~> v2"
-          args: release --clean
+          install-only: true
+
+      - name: Run semantic-release
+        run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
