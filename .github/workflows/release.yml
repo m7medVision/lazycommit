@@ -2,17 +2,15 @@ name: Release
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - "v*"
   workflow_dispatch:
 
 permissions:
   contents: write
-  issues: write
-  pull-requests: write
 
 jobs:
-  release:
+  goreleaser:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -20,27 +18,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "lts/*"
-
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: "1.21"
 
-      - name: Install GoReleaser
+      - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
           version: "~> v2"
-          install-only: true
-
-      - name: Install plugins
-        run: npm install @semantic-release/git @semantic-release/exec
-
-      - name: Run semantic-release
-        run: npx semantic-release
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

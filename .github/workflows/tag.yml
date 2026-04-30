@@ -1,0 +1,42 @@
+name: Tag
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+
+      - name: Install plugins
+        run: npm install @semantic-release/git @semantic-release/exec
+
+      - name: Run semantic-release
+        id: release
+        run: |
+          npx semantic-release
+          new_tag=$(git describe --tags --abbrev=0)
+          echo "new_tag=$new_tag" >> "$GITHUB_OUTPUT"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trigger release workflow
+        run: |
+          gh workflow run release.yml --ref main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
