@@ -2,10 +2,10 @@ name: Release
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
   workflow_dispatch:
-  
+
 permissions:
   contents: write
 
@@ -22,6 +22,23 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: "1.21"
+
+      - name: Auto-tag
+        run: |
+          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          version=${latest_tag#v}
+          IFS='.' read -r major minor patch <<< "$version"
+          feat_count=$(git log "$latest_tag"..HEAD --oneline --grep='^feat[(:]' | wc -l)
+          if [ "$feat_count" -gt 0 ]; then
+            minor=$((minor + 1))
+            patch=0
+          else
+            patch=$((patch + 1))
+          fi
+          new_tag="v$major.$minor.$patch"
+          echo "Creating tag $new_tag"
+          git tag "$new_tag"
+          git push origin "$new_tag"
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
