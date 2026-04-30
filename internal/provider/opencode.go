@@ -138,14 +138,35 @@ func (o *OpencodeProvider) runCLI(ctx context.Context, prompt string) (string, e
 	candidates := opencodeModelCandidates(o.model, o.fallbackModels)
 	var errors []string
 	for _, model := range candidates {
-		cmd := exec.CommandContext(ctx, "opencode", "run", "--model", model, "--", prompt)
+		cmd := exec.CommandContext(ctx, "opencode", "run", "--model", model)
+
+		stdin, err := cmd.StdinPipe()
+		if err != nil {
+			errors = append(errors, fmt.Sprintf("%s: error creating stdin pipe: %v", model, err))
+			continue
+		}
 
 		var stdoutBuf, stderrBuf strings.Builder
 		cmd.Stdout = &stdoutBuf
 		cmd.Stderr = &stderrBuf
 
-		if err := cmd.Run(); err != nil {
-			errors = append(errors, fmt.Sprintf("%s: %v: %s", model, err, strings.TrimSpace(stderrBuf.String())))
+		if err := cmd.Start(); err != nil {
+			errors = append(errors, fmt.Sprintf("%s: error starting opencode CLI: %v", model, err))
+			continue
+		}
+
+		_, writeErr := stdin.Write([]byte(prompt))
+		stdin.Close()
+
+		waitErr := cmd.Wait()
+
+		if writeErr != nil {
+			errors = append(errors, fmt.Sprintf("%s: error writing to opencode CLI stdin: %v", model, writeErr))
+			continue
+		}
+
+		if waitErr != nil {
+			errors = append(errors, fmt.Sprintf("%s: %v: %s", model, waitErr, strings.TrimSpace(stderrBuf.String())))
 			continue
 		}
 

@@ -88,7 +88,7 @@ providers:
     model: "opencode/minimax-m2.5-free" # Uses opencode CLI - no API key needed
     fallback_models:
       - "opencode/minimax-m2.5-free"
-      - "opencode/linng-2.6-flash-free"
+      - "opencode/ling-2.6-flash-free"
       - "opencode/hy3-preview-free"
       - "opencode/nemotron-3-super-free"
     num_suggestions: 10
