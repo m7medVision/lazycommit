@@ -37,6 +37,9 @@ jobs:
           version: "~> v2"
           install-only: true
 
+      - name: Install plugins
+        run: npm install @semantic-release/git @semantic-release/exec
+
       - name: Run semantic-release
         run: npx semantic-release
         env:
