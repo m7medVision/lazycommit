@@ -7,7 +7,6 @@ release:
   github:
     owner: m7medVision
     name: lazycommit
-  skip_verify: true
 
 builds:
   - id: lazycommit
