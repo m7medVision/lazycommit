@@ -92,7 +92,17 @@ func GetActiveProviderConfig() (*ProviderConfig, error) {
 	if cfg == nil {
 		InitConfig()
 	}
-	providerName := cfg.ActiveProvider
+	return GetProviderConfig(cfg.ActiveProvider)
+}
+
+func GetProviderConfig(providerName string) (*ProviderConfig, error) {
+	if cfg == nil {
+		InitConfig()
+	}
+	providerName = strings.TrimSpace(providerName)
+	if providerName == "" {
+		return nil, fmt.Errorf("provider is empty")
+	}
 	providerConfig, ok := cfg.Providers[providerName]
 	if !ok {
 		return nil, fmt.Errorf("provider '%s' not configured", providerName)
@@ -104,14 +114,18 @@ func GetAPIKey() (string, error) {
 	if cfg == nil {
 		InitConfig()
 	}
+	return GetAPIKeyForProvider(cfg.ActiveProvider)
+}
 
-	providerConfig, err := GetActiveProviderConfig()
+func GetAPIKeyForProvider(providerName string) (string, error) {
+	providerConfig, err := GetProviderConfig(providerName)
 	if err != nil {
 		return "", err
 	}
+	providerName = strings.TrimSpace(providerName)
 
 	if providerConfig.APIKey == "" {
-		return "", fmt.Errorf("API key for provider '%s' is not set", cfg.ActiveProvider)
+		return "", fmt.Errorf("API key for provider '%s' is not set", providerName)
 	}
 
 	apiKey := providerConfig.APIKey
@@ -121,7 +135,7 @@ func GetAPIKey() (string, error) {
 		envVarName := strings.TrimPrefix(apiKey, "$")
 		envValue := os.Getenv(envVarName)
 		if envValue == "" {
-			return "", fmt.Errorf("environment variable '%s' for provider '%s' is not set or empty", envVarName, cfg.ActiveProvider)
+			return "", fmt.Errorf("environment variable '%s' for provider '%s' is not set or empty", envVarName, providerName)
 		}
 		return envValue, nil
 	}
@@ -130,21 +144,37 @@ func GetAPIKey() (string, error) {
 }
 
 func GetModel() (string, error) {
-	providerConfig, err := GetActiveProviderConfig()
+	if cfg == nil {
+		InitConfig()
+	}
+	return GetModelForProvider(cfg.ActiveProvider)
+}
+
+func GetModelForProvider(providerName string) (string, error) {
+	providerConfig, err := GetProviderConfig(providerName)
 	if err != nil {
 		return "", err
 	}
+	providerName = strings.TrimSpace(providerName)
 	if providerConfig.Model == "" {
-		return "", fmt.Errorf("model for provider '%s' is not set", cfg.ActiveProvider)
+		return "", fmt.Errorf("model for provider '%s' is not set", providerName)
 	}
 	return providerConfig.Model, nil
 }
 
 func GetEndpoint() (string, error) {
-	providerConfig, err := GetActiveProviderConfig()
+	if cfg == nil {
+		InitConfig()
+	}
+	return GetEndpointForProvider(cfg.ActiveProvider)
+}
+
+func GetEndpointForProvider(providerName string) (string, error) {
+	providerConfig, err := GetProviderConfig(providerName)
 	if err != nil {
 		return "", err
 	}
+	providerName = strings.TrimSpace(providerName)
 
 	// If custom endpoint is configured, use it
 	if providerConfig.EndpointURL != "" {
@@ -152,7 +182,7 @@ func GetEndpoint() (string, error) {
 	}
 
 	// Return default endpoints based on provider
-	switch cfg.ActiveProvider {
+	switch providerName {
 	case "openai":
 		return "https://api.openai.com/v1", nil
 	case "copilot":
@@ -164,7 +194,7 @@ func GetEndpoint() (string, error) {
 	case "opencode":
 		return "", nil // opencode uses CLI, no endpoint needed
 	default:
-		return "", fmt.Errorf("no default endpoint available for provider '%s'", cfg.ActiveProvider)
+		return "", fmt.Errorf("no default endpoint available for provider '%s'", providerName)
 	}
 }
 
@@ -280,7 +310,11 @@ func GetNumSuggestions() int {
 	if cfg == nil {
 		InitConfig()
 	}
-	providerConfig, err := GetActiveProviderConfig()
+	return GetNumSuggestionsForProvider(cfg.ActiveProvider)
+}
+
+func GetNumSuggestionsForProvider(providerName string) int {
+	providerConfig, err := GetProviderConfig(providerName)
 	if err != nil {
 		return 10 // Default to 10 if error
 	}
@@ -294,7 +328,11 @@ func GetFallbackModels() []string {
 	if cfg == nil {
 		InitConfig()
 	}
-	providerConfig, err := GetActiveProviderConfig()
+	return GetFallbackModelsForProvider(cfg.ActiveProvider)
+}
+
+func GetFallbackModelsForProvider(providerName string) []string {
+	providerConfig, err := GetProviderConfig(providerName)
 	if err != nil {
 		return nil
 	}

@@ -4,12 +4,12 @@ import "testing"
 
 func TestApplyOutputOverrides(t *testing.T) {
 	in := []string{"feat: add provider and model flags"}
-	out := applyOutputOverrides(in, "Spanish", true)
+	out := applyOutputOverrides(in, true)
 
 	if len(out) != 1 {
 		t.Fatalf("expected 1 message, got %d", len(out))
 	}
-	if out[0] != "✨ feat: agrega provider and model flags" {
+	if out[0] != "✨ feat: add provider and model flags" {
 		t.Fatalf("unexpected output: %q", out[0])
 	}
 }
@@ -29,9 +29,9 @@ func TestEnsureGitmojiPrefix_NoDoubleEmoji(t *testing.T) {
 	}
 }
 
-func TestLocalizeDescriptionSpanish(t *testing.T) {
-	got := localizeDescriptionSpanish("docs: update README examples")
-	want := "docs: actualiza README examples"
+func TestEnsureGitmojiPrefix_NonASCIIDescription(t *testing.T) {
+	got := ensureGitmojiPrefix("feat: añade validación")
+	want := "✨ feat: añade validación"
 	if got != want {
 		t.Fatalf("got %q, want %q", got, want)
 	}

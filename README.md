@@ -71,22 +71,17 @@ lazycommit commit | fzf --prompt='Pick commit> ' | xargs -r -I {} git commit -m 
 Use gc-style parameters:
 
 ```bash
-# stage all files first, then generate 3 suggestions in Spanish with emoji
+# stage all tracked, deleted, and untracked files first, then generate 3 suggestions in Spanish with emoji
 lazycommit commit --stage-all -g 3 -l Spanish -e
 
-# language and emoji flags are enforced on output formatting
-# even when the upstream model response is inconsistent
+# emoji output is normalized even when the upstream model response is inconsistent
 
-# force opencode provider/model and fallback candidates
+# force opencode provider/model for one run
 lazycommit commit -p opencode \
-  -m opencode/minimax-m2.5-free \
-  --fallback-models opencode/minimax-m2.5-free,opencode/ling-2.6-flash-free
+  -m opencode/minimax-m2.5-free
 
 # print only first generated message (for scripting)
 lazycommit commit -o
-
-# disable loading spinner
-lazycommit commit -q
 
 # debug mode (prints provider/model/diff diagnostics)
 lazycommit commit -d
