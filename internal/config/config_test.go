@@ -105,6 +105,75 @@ func TestGetAPIKey_RegularAPIKey(t *testing.T) {
 	}
 }
 
+func TestProviderSpecificConfigAccessors(t *testing.T) {
+	cfg = &Config{
+		ActiveProvider: "openai",
+		Providers: map[string]ProviderConfig{
+			"openai": {
+				APIKey:         "openai-key",
+				Model:          "openai-model",
+				EndpointURL:    "https://openai.example/v1",
+				NumSuggestions: 3,
+			},
+			"copilot": {
+				APIKey:         "copilot-key",
+				Model:          "copilot-model",
+				EndpointURL:    "https://copilot.example",
+				NumSuggestions: 7,
+			},
+			"opencode": {
+				Model:          "opencode-model",
+				FallbackModels: []string{"fallback-a", "fallback-b"},
+			},
+		},
+	}
+	t.Cleanup(func() {
+		cfg = nil
+		viper.Reset()
+	})
+
+	activeKey, err := GetAPIKey()
+	if err != nil {
+		t.Fatalf("GetAPIKey returned error: %v", err)
+	}
+	if activeKey != "openai-key" {
+		t.Fatalf("active provider key = %q, want openai-key", activeKey)
+	}
+
+	copilotKey, err := GetAPIKeyForProvider("copilot")
+	if err != nil {
+		t.Fatalf("GetAPIKeyForProvider returned error: %v", err)
+	}
+	if copilotKey != "copilot-key" {
+		t.Fatalf("copilot key = %q, want copilot-key", copilotKey)
+	}
+
+	copilotModel, err := GetModelForProvider("copilot")
+	if err != nil {
+		t.Fatalf("GetModelForProvider returned error: %v", err)
+	}
+	if copilotModel != "copilot-model" {
+		t.Fatalf("copilot model = %q, want copilot-model", copilotModel)
+	}
+
+	copilotEndpoint, err := GetEndpointForProvider("copilot")
+	if err != nil {
+		t.Fatalf("GetEndpointForProvider returned error: %v", err)
+	}
+	if copilotEndpoint != "https://copilot.example" {
+		t.Fatalf("copilot endpoint = %q, want https://copilot.example", copilotEndpoint)
+	}
+
+	if got := GetNumSuggestionsForProvider("copilot"); got != 7 {
+		t.Fatalf("copilot suggestions = %d, want 7", got)
+	}
+
+	fallbacks := GetFallbackModelsForProvider("opencode")
+	if len(fallbacks) != 2 || fallbacks[0] != "fallback-a" || fallbacks[1] != "fallback-b" {
+		t.Fatalf("opencode fallbacks = %#v, want fallback-a/fallback-b", fallbacks)
+	}
+}
+
 func TestGetEndpoint_DefaultEndpoints(t *testing.T) {
 	// Reset configuration for clean test
 	cfg = nil

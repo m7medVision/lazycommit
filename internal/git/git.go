@@ -27,6 +27,24 @@ func GetStagedDiff() (string, error) {
 	return out.String(), nil
 }
 
+func HasChanges() (bool, error) {
+	cmd := exec.Command("git", "status", "--short")
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	if err := cmd.Run(); err != nil {
+		return false, fmt.Errorf("error running git status --short: %w", err)
+	}
+	return strings.TrimSpace(out.String()) != "", nil
+}
+
+func StageAll() error {
+	cmd := exec.Command("git", "add", "--all")
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("error running git add --all: %w", err)
+	}
+	return nil
+}
+
 // GetDiffAgainstBranch returns the diff against the specified branch. For example "main" when creating a PR.
 func GetDiffAgainstBranch(branch string) (string, error) {
 	// Check if the branch exists
