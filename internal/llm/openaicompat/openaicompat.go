@@ -11,7 +11,7 @@ import (
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 
-	"github.com/m7medvision/lazycommit/internal/domain"
+	"github.com/m7medvision/lazycommit/v2/internal/domain"
 )
 
 type Config struct {

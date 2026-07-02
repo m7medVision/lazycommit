@@ -12,8 +12,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/m7medvision/lazycommit/internal/app"
-	"github.com/m7medvision/lazycommit/internal/domain"
+	"github.com/m7medvision/lazycommit/v2/internal/app"
+	"github.com/m7medvision/lazycommit/v2/internal/domain"
 )
 
 const (

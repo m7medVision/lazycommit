@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/m7medvision/lazycommit/internal/config"
+	"github.com/m7medvision/lazycommit/v2/internal/config"
 )
 
 func newConfigCmd(deps Deps) *cobra.Command {

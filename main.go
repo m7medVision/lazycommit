@@ -9,14 +9,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/m7medvision/lazycommit/cmd"
-	"github.com/m7medvision/lazycommit/internal/app"
-	"github.com/m7medvision/lazycommit/internal/config"
-	"github.com/m7medvision/lazycommit/internal/domain"
-	"github.com/m7medvision/lazycommit/internal/git"
-	"github.com/m7medvision/lazycommit/internal/llm"
-	"github.com/m7medvision/lazycommit/internal/llm/middleware"
-	"github.com/m7medvision/lazycommit/internal/llm/openaicompat"
+	"github.com/m7medvision/lazycommit/v2/cmd"
+	"github.com/m7medvision/lazycommit/v2/internal/app"
+	"github.com/m7medvision/lazycommit/v2/internal/config"
+	"github.com/m7medvision/lazycommit/v2/internal/domain"
+	"github.com/m7medvision/lazycommit/v2/internal/git"
+	"github.com/m7medvision/lazycommit/v2/internal/llm"
+	"github.com/m7medvision/lazycommit/v2/internal/llm/middleware"
+	"github.com/m7medvision/lazycommit/v2/internal/llm/openaicompat"
 )
 
 // version is injected by goreleaser via ldflags.

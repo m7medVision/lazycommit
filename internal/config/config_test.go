@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/m7medvision/lazycommit/internal/domain"
+	"github.com/m7medvision/lazycommit/v2/internal/domain"
 )
 
 func writeFile(t *testing.T, path, content string) {

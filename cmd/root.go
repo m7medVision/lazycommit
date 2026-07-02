@@ -5,8 +5,8 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/m7medvision/lazycommit/internal/app"
-	"github.com/m7medvision/lazycommit/internal/config"
+	"github.com/m7medvision/lazycommit/v2/internal/app"
+	"github.com/m7medvision/lazycommit/v2/internal/config"
 )
 
 // Deps is everything the commands need, wired by the composition root. Use

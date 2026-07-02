@@ -22,7 +22,7 @@ suggestions — one per line, ready to pipe into lazygit, fzf, or any TUI menu.
 ## Installation
 
 ```bash
-go install github.com/m7medvision/lazycommit@latest
+go install github.com/m7medvision/lazycommit/v2@latest
 ```
 
 Or build from source:
