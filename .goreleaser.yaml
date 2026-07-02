@@ -10,14 +10,14 @@ release:
 
 builds:
   - id: lazycommit
-    main: ./main.go
+    main: .
     binary: lazycommit
     env:
       - CGO_ENABLED=0
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
     ldflags:
-      - -s -w
+      - -s -w -X main.version={{.Version}}
 
 archives:
   - id: archive
@@ -34,5 +34,6 @@ changelog:
   use: git
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
