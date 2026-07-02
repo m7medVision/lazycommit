@@ -1,9 +1,9 @@
 package main
 
-import (
-	"github.com/m7medvision/lazycommit/cmd"
-)
+import "fmt"
+
+var version = "dev"
 
 func main() {
-	cmd.Execute()
+	fmt.Println("lazycommit", version)
 }

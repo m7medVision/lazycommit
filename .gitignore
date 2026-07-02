@@ -1,44 +1,18 @@
-# Binaries for programs and plugins
-*.exe
-*.dll
-*.so
-*.dylib
+# Build output
+/lazycommit
+/lazycommit.exe
+dist/
 
-# Test binary, build artifacts, and coverage reports
+# Test and coverage artifacts
 *.test
 *.out
-*.a
-*.o
-*.lo
-*.la
-*.lai
-*.gch
-*.gcda
-*.gcno
-*.gcov
-
-# Output of the go coverage tool
 *.cover
-
-# Go workspace file
-*.code-workspace
-
-# Dependency directories (vendor/) and Go modules
-vendor/
-Gopkg.lock
-Gopkg.toml
 
 # IDE and editor files
 .idea/
 .vscode/
 *.swp
 *.swo
-
-# Logs and temporary files
-*.log
-*.tmp
-*.bak
-*.old
 
 # OS generated files
 .DS_Store
@@ -47,13 +21,3 @@ Thumbs.db
 # Environment files
 .env
 .env.*
-
-# Build directories
-bin/
-obj/
-
-# Node.js
-node_modules/
-
-# Lazycommit specific
-lazycommit
