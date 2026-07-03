@@ -5,8 +5,8 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/m7medvision/lazycommit/v2/internal/app"
-	"github.com/m7medvision/lazycommit/v2/internal/config"
+	"github.com/m7medvision/lazycommit/internal/app"
+	"github.com/m7medvision/lazycommit/internal/config"
 )
 
 // Deps is everything the commands need, wired by the composition root. Use
@@ -18,9 +18,6 @@ type Deps struct {
 	ConfigRepo   *config.Repository
 	BackendNames []string
 	Version      string
-	// V1Hint is a warning about leftover v1 configuration, printed to
-	// stderr before generation commands; empty when not applicable.
-	V1Hint string
 }
 
 func NewRoot(deps Deps) *cobra.Command {
@@ -32,10 +29,4 @@ func NewRoot(deps Deps) *cobra.Command {
 	}
 	root.AddCommand(newCommitCmd(deps), newPRCmd(deps), newConfigCmd(deps))
 	return root
-}
-
-func printV1Hint(cmd *cobra.Command, deps Deps) {
-	if deps.V1Hint != "" {
-		cmd.PrintErrln(deps.V1Hint)
-	}
 }

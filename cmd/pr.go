@@ -11,7 +11,6 @@ func newPRCmd(deps Deps) *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
-			printV1Hint(cmd, deps)
 
 			uc, err := deps.NewPRUC()
 			if err != nil {

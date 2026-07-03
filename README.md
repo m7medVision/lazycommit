@@ -4,12 +4,6 @@ AI-powered Git commit message generator. It reads your staged diff, asks an
 LLM through any OpenAI-compatible API, and prints clean commit message
 suggestions — one per line, ready to pipe into lazygit, fzf, or any TUI menu.
 
-> [!IMPORTANT]
-> **v2 is a full rewrite and a breaking change.** The v1 configuration format
-> and providers (opencode, Claude Code CLI, Copilot, Gemini) are gone. v2
-> talks to exactly one backend family: any endpoint speaking the OpenAI
-> chat-completions protocol. Run `lazycommit config set` to start fresh.
-
 ## Features
 
 - Suggests a configurable number of commit messages from `git diff --cached`
@@ -22,7 +16,7 @@ suggestions — one per line, ready to pipe into lazygit, fzf, or any TUI menu.
 ## Installation
 
 ```bash
-go install github.com/m7medvision/lazycommit/v2@latest
+go install github.com/m7medvision/lazycommit@latest
 ```
 
 Or build from source:
@@ -177,7 +171,6 @@ Variant that lets you edit the message before committing:
 - `No staged changes to commit.` — run `git add` first.
 - `has no model configured` — run `lazycommit config set`.
 - `environment variable X is not set` — your config references `$X`; export it or store the key directly.
-- Found v1 config note — v2 uses a new format; run `lazycommit config set` once and delete the old `~/.config/.lazycommit.yaml`.
 
 ## License
 

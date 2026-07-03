@@ -9,14 +9,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/m7medvision/lazycommit/v2/cmd"
-	"github.com/m7medvision/lazycommit/v2/internal/app"
-	"github.com/m7medvision/lazycommit/v2/internal/config"
-	"github.com/m7medvision/lazycommit/v2/internal/domain"
-	"github.com/m7medvision/lazycommit/v2/internal/git"
-	"github.com/m7medvision/lazycommit/v2/internal/llm"
-	"github.com/m7medvision/lazycommit/v2/internal/llm/middleware"
-	"github.com/m7medvision/lazycommit/v2/internal/llm/openaicompat"
+	"github.com/m7medvision/lazycommit/cmd"
+	"github.com/m7medvision/lazycommit/internal/app"
+	"github.com/m7medvision/lazycommit/internal/config"
+	"github.com/m7medvision/lazycommit/internal/domain"
+	"github.com/m7medvision/lazycommit/internal/git"
+	"github.com/m7medvision/lazycommit/internal/llm"
+	"github.com/m7medvision/lazycommit/internal/llm/middleware"
+	"github.com/m7medvision/lazycommit/internal/llm/openaicompat"
 )
 
 // version is injected by goreleaser via ldflags.
@@ -79,7 +79,6 @@ func buildDeps() (cmd.Deps, error) {
 		ConfigRepo:   cfgRepo,
 		BackendNames: registry.Names(),
 		Version:      version,
-		V1Hint:       v1Hint(cfgRepo),
 	}, nil
 }
 
@@ -138,16 +137,6 @@ func (l lazyGenerator) Generate(ctx context.Context, prompt domain.Prompt) (stri
 		return "", err
 	}
 	return gen.Generate(ctx, prompt)
-}
-
-func v1Hint(cfgRepo *config.Repository) string {
-	if cfgRepo.HasBackendsFile() {
-		return ""
-	}
-	if p := cfgRepo.V1ConfigPath(); p != "" {
-		return fmt.Sprintf("Note: found v1 config at %s; lazycommit v2 uses a new format — run 'lazycommit config set'.", p)
-	}
-	return ""
 }
 
 func dedupe(models []string) []string {

@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/m7medvision/lazycommit/v2/internal/app"
-	"github.com/m7medvision/lazycommit/v2/internal/domain"
+	"github.com/m7medvision/lazycommit/internal/app"
+	"github.com/m7medvision/lazycommit/internal/domain"
 )
 
 type timeoutGenerator struct {

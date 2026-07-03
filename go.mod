@@ -1,4 +1,4 @@
-module github.com/m7medvision/lazycommit/v2
+module github.com/m7medvision/lazycommit
 
 go 1.25
 

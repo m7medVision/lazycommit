@@ -6,7 +6,7 @@ package app
 import (
 	"context"
 
-	"github.com/m7medvision/lazycommit/v2/internal/domain"
+	"github.com/m7medvision/lazycommit/internal/domain"
 )
 
 // Generator produces raw LLM output for a prompt. The commit/PR distinction

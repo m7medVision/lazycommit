@@ -11,7 +11,6 @@ func newCommitCmd(deps Deps) *cobra.Command {
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cmd.SilenceUsage = true
-			printV1Hint(cmd, deps)
 
 			uc, err := deps.NewCommitUC()
 			if err != nil {

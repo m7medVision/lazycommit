@@ -12,8 +12,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/m7medvision/lazycommit/v2/internal/app"
-	"github.com/m7medvision/lazycommit/v2/internal/domain"
+	"github.com/m7medvision/lazycommit/internal/app"
+	"github.com/m7medvision/lazycommit/internal/domain"
 )
 
 const (
@@ -206,25 +206,6 @@ func (r *Repository) PromptSettings() (app.PromptSettings, error) {
 		Language:        domain.NewLanguage(p.Language),
 		SuggestionCount: count,
 	}, nil
-}
-
-// V1ConfigPath returns the path of a leftover v1 configuration file so the
-// CLI can hint that v2 uses a new format, or "" when none exists.
-func (r *Repository) V1ConfigPath() string {
-	base := filepath.Dir(r.globalDir)
-	for _, name := range []string{".lazycommit.yaml", ".lazycommit.prompts.yaml"} {
-		p := filepath.Join(base, name)
-		if _, err := os.Stat(p); err == nil {
-			return p
-		}
-	}
-	return ""
-}
-
-// HasBackendsFile reports whether a v2 backend configuration was saved.
-func (r *Repository) HasBackendsFile() bool {
-	_, err := os.Stat(filepath.Join(r.globalDir, backendsFile))
-	return err == nil
 }
 
 func (r *Repository) expandSecret(value string) (string, error) {

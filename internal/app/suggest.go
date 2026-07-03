@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/m7medvision/lazycommit/v2/internal/domain"
+	"github.com/m7medvision/lazycommit/internal/domain"
 )
 
 // SuggestionsResult carries generated suggestions, or NoChanges when the

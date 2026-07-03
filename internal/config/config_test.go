@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/m7medvision/lazycommit/v2/internal/domain"
+	"github.com/m7medvision/lazycommit/internal/domain"
 )
 
 func writeFile(t *testing.T, path, content string) {
@@ -169,20 +169,6 @@ commit_message_template: "no placeholder here"
 	_, err := NewRepository(globalDir, "").PromptSettings()
 	if err == nil || !strings.Contains(err.Error(), "commit_message_template") {
 		t.Fatalf("expected template validation error, got %v", err)
-	}
-}
-
-func TestV1ConfigDetection(t *testing.T) {
-	base := t.TempDir()
-	globalDir := filepath.Join(base, "lazycommit")
-	r := NewRepository(globalDir, "")
-	if got := r.V1ConfigPath(); got != "" {
-		t.Fatalf("expected no v1 config, got %q", got)
-	}
-
-	writeFile(t, filepath.Join(base, ".lazycommit.yaml"), "active_provider: opencode\n")
-	if got := r.V1ConfigPath(); got == "" {
-		t.Fatal("expected v1 config to be detected")
 	}
 }
 

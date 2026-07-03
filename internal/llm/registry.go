@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/m7medvision/lazycommit/v2/internal/app"
+	"github.com/m7medvision/lazycommit/internal/app"
 )
 
 // BackendConfig carries everything a factory may need to build a backend for

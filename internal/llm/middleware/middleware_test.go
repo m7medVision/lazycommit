@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/m7medvision/lazycommit/v2/internal/domain"
+	"github.com/m7medvision/lazycommit/internal/domain"
 )
 
 type scriptedGenerator struct {
