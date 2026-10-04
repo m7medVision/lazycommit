@@ -125,6 +125,9 @@ func TestPromptSettingsDefaultsWhenNoFiles(t *testing.T) {
 	if s.SystemMessage != domain.DefaultSystemMessage {
 		t.Fatalf("system = %q", s.SystemMessage)
 	}
+	if s.MaxDiffChars != domain.DefaultMaxDiffChars {
+		t.Fatalf("max diff chars = %d", s.MaxDiffChars)
+	}
 }
 
 func TestPromptSettingsLayering(t *testing.T) {
@@ -134,10 +137,12 @@ func TestPromptSettingsLayering(t *testing.T) {
 language: Spanish
 system_message: global system
 num_suggestions: 7
+max_diff_chars: 5000
 `)
 	writeFile(t, filepath.Join(repoRoot, "lazycommit.prompts.yaml"), `
 language: Korean
 commit_message_template: "REPO %s"
+max_diff_chars: 8000
 `)
 
 	s, err := NewRepository(globalDir, repoRoot).PromptSettings()
@@ -152,6 +157,9 @@ commit_message_template: "REPO %s"
 	}
 	if s.SuggestionCount != 7 {
 		t.Fatalf("global count should fall through, got %d", s.SuggestionCount)
+	}
+	if s.MaxDiffChars != 8000 {
+		t.Fatalf("repo-local max diff chars should win, got %d", s.MaxDiffChars)
 	}
 	if s.CommitTemplate.String() != "REPO %s" {
 		t.Fatalf("repo-local template should win, got %q", s.CommitTemplate)

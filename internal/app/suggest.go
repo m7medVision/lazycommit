@@ -55,7 +55,7 @@ func (uc *GeneratePRTitles) Execute(ctx context.Context, target string) (Suggest
 }
 
 // suggestionPipeline is the shared flow: read diff, short-circuit when
-// empty, build prompt, generate, parse. Commit and PR generation differ
+// empty, compact to the size budget, build prompt, generate, parse. Commit and PR generation differ
 // only in diff source and template.
 type suggestionPipeline struct {
 	gen   Generator
@@ -85,6 +85,12 @@ func (p suggestionPipeline) run(
 	if err != nil {
 		return SuggestionsResult{}, fmt.Errorf("loading configuration: %w", err)
 	}
+
+	maxDiff := settings.MaxDiffChars
+	if maxDiff <= 0 {
+		maxDiff = domain.DefaultMaxDiffChars
+	}
+	diff = diff.Compact(maxDiff)
 
 	prompt := domain.NewPromptBuilder().
 		WithSystemMessage(settings.SystemMessage).

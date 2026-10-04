@@ -18,7 +18,7 @@ func New() *CLI {
 
 // StagedDiff returns `git diff --cached`; empty output means nothing staged.
 func (c *CLI) StagedDiff(ctx context.Context) (string, error) {
-	return run(ctx, "diff", "--cached")
+	return run(ctx, diffArgs("--cached")...)
 }
 
 // BranchDiff returns the merge-base diff between target and HEAD — the same
@@ -27,7 +27,14 @@ func (c *CLI) BranchDiff(ctx context.Context, target string) (string, error) {
 	if _, err := run(ctx, "rev-parse", "--verify", target); err != nil {
 		return "", fmt.Errorf("branch %q does not exist", target)
 	}
-	return run(ctx, "diff", target+"...HEAD")
+	return run(ctx, diffArgs(target+"...HEAD")...)
+}
+
+// diffArgs pins the diff format that domain.Diff parses, so user settings
+// such as diff.noprefix, diff.mnemonicPrefix, diff.external, or
+// color.ui=always cannot change it.
+func diffArgs(extra ...string) []string {
+	return append([]string{"diff", "--no-color", "--no-ext-diff", "--src-prefix=a/", "--dst-prefix=b/"}, extra...)
 }
 
 // RepoRoot returns the repository top-level directory, or "" when the
