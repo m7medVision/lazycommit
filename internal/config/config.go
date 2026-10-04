@@ -50,6 +50,7 @@ type Prompts struct {
 	CommitMessageTemplate string `yaml:"commit_message_template,omitempty"`
 	PRTitleTemplate       string `yaml:"pr_title_template,omitempty"`
 	NumSuggestions        int    `yaml:"num_suggestions,omitempty"`
+	MaxDiffChars          int    `yaml:"max_diff_chars,omitempty"`
 }
 
 // DefaultBackends is the effective configuration when no file exists; the
@@ -198,6 +199,10 @@ func (r *Repository) PromptSettings() (app.PromptSettings, error) {
 	if count <= 0 {
 		count = domain.DefaultSuggestionCount
 	}
+	maxDiff := p.MaxDiffChars
+	if maxDiff <= 0 {
+		maxDiff = domain.DefaultMaxDiffChars
+	}
 
 	return app.PromptSettings{
 		SystemMessage:   system,
@@ -205,6 +210,7 @@ func (r *Repository) PromptSettings() (app.PromptSettings, error) {
 		PRTitleTemplate: pr,
 		Language:        domain.NewLanguage(p.Language),
 		SuggestionCount: count,
+		MaxDiffChars:    maxDiff,
 	}, nil
 }
 
@@ -237,6 +243,9 @@ func mergePrompts(top, bottom Prompts) Prompts {
 	}
 	if top.NumSuggestions > 0 {
 		out.NumSuggestions = top.NumSuggestions
+	}
+	if top.MaxDiffChars > 0 {
+		out.MaxDiffChars = top.MaxDiffChars
 	}
 	return out
 }
