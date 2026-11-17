@@ -96,6 +96,27 @@ func TestCommitSuggestionsHappyPath(t *testing.T) {
 	}
 }
 
+func TestCommitSuggestionsCompactsLargeDiff(t *testing.T) {
+	raw := "diff --git a/big.txt b/big.txt\n--- a/big.txt\n+++ b/big.txt\n@@ -0,0 +1,500 @@\n" +
+		strings.Repeat("+some added content\n", 500)
+	settings := testSettings(t)
+	settings.MaxDiffChars = 1000
+	gen := &fakeGenerator{output: "feat: one"}
+	uc := NewGenerateCommitSuggestions(gen,
+		&fakeDiffSource{staged: raw},
+		&fakeConfig{settings: settings})
+
+	if _, err := uc.Execute(context.Background()); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if strings.Contains(gen.lastPrompt.User, raw) {
+		t.Fatal("full diff must not be sent when it exceeds the budget")
+	}
+	if !strings.Contains(gen.lastPrompt.User, "big.txt +500 -0") {
+		t.Fatalf("prompt misses the file summary: %q", gen.lastPrompt.User)
+	}
+}
+
 func TestCommitSuggestionsEmptyDiffShortCircuits(t *testing.T) {
 	gen := &fakeGenerator{output: "unused"}
 	uc := NewGenerateCommitSuggestions(gen,

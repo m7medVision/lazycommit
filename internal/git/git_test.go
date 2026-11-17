@@ -73,6 +73,25 @@ func TestStagedDiff(t *testing.T) {
 	}
 }
 
+func TestStagedDiffIgnoresFormatConfig(t *testing.T) {
+	dir := initRepo(t)
+	gitRun(t, dir, "config", "diff.noprefix", "true")
+	gitRun(t, dir, "config", "diff.mnemonicPrefix", "true")
+	gitRun(t, dir, "config", "color.ui", "always")
+	if err := os.WriteFile(filepath.Join(dir, "new.txt"), []byte("x\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	gitRun(t, dir, "add", "new.txt")
+
+	out, err := New().StagedDiff(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(out, "diff --git a/new.txt b/new.txt\n") || !strings.Contains(out, "\n+++ b/new.txt\n") {
+		t.Fatalf("diff format must not depend on prefix or color config: %q", out)
+	}
+}
+
 func TestBranchDiff(t *testing.T) {
 	dir := initRepo(t)
 	cli := New()

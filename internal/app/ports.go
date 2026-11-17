@@ -28,6 +28,7 @@ type PromptSettings struct {
 	PRTitleTemplate domain.PromptTemplate
 	Language        domain.Language
 	SuggestionCount int
+	MaxDiffChars    int
 }
 
 // ConfigRepository yields the effective settings the use cases need.

@@ -74,6 +74,7 @@ Shareable, safe for dotfiles:
 ```yaml
 language: English
 num_suggestions: 10
+# max_diff_chars: 40000              # size budget for the diff sent to the model
 # system_message: ...
 # commit_message_template: "... %s"   # %s is replaced by the diff
 # pr_title_template: "... %s"
@@ -171,6 +172,7 @@ Variant that lets you edit the message before committing:
 - `No staged changes to commit.` — run `git add` first.
 - `has no model configured` — run `lazycommit config set`.
 - `environment variable X is not set` — your config references `$X`; export it or store the key directly.
+- Large change sets: when the diff is longer than `max_diff_chars`, lazycommit sends a list of the changed files with line counts plus as many file diffs as fit; a very long file list is itself cut short with a count of the remaining files. Lock files, minified files, and binary files are listed without their diffs. Lower the value if your model still rejects the request as too large.
 
 ## License
 
